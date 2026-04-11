@@ -1,0 +1,32 @@
+{
+  "run_name": "fold_3",
+  "seed": 42,
+  "best_epoch": 1,
+  "best_checkpoint_metric": "val_f1_macro",
+  "best_checkpoint_metric_value": 0.4564705882352942,
+  "best_val_loss_observed": 2.0794532082297583,
+  "best_val_f1_macro_observed": 0.4564705882352942,
+  "train_samples": 85,
+  "val_samples": 21,
+  "train_class_counts": {
+    "caries": 65,
+    "deep_caries": 20
+  },
+  "val_class_counts": {
+    "caries": 16,
+    "deep_caries": 5
+  },
+  "used_pseudo_labels": false,
+  "stopped_early": false,
+  "epochs_completed": 1,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 2.1093357486628688,
+      "val_loss": 2.0794532082297583,
+      "val_accuracy": 0.47619047619047616,
+      "val_f1_macro": 0.4564705882352942,
+      "lr": 0.0002
+    }
+  ]
+}

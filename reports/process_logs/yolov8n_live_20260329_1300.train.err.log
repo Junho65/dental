@@ -1,0 +1,89 @@
+Traceback (most recent call last):
+  File "C:\Users\junho\Desktop\4ÇÐ³â 1ÇÐ±â\µö·¯´×½Ç½À\dental\scripts\train_detection.py", line 227, in <module>
+    main()
+  File "C:\Users\junho\Desktop\4ÇÐ³â 1ÇÐ±â\µö·¯´×½Ç½À\dental\scripts\train_detection.py", line 220, in main
+    model.train(**train_kw)
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\engine\model.py", line 777, in train
+    self.trainer.train()
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\engine\trainer.py", line 244, in train
+    self._do_train()
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\engine\trainer.py", line 366, in _do_train
+    self._setup_train()
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\engine\trainer.py", line 328, in _setup_train
+    self.amp = torch.tensor(check_amp(self.model), device=self.device)
+                            ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\utils\checks.py", line 894, in check_amp
+    assert amp_allclose(YOLO("yolo26n.pt"), im)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\utils\checks.py", line 882, in amp_allclose
+    a = m(batch, imgsz=imgsz, device=device, verbose=False)[0].boxes.data  # FP32 inference
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\engine\model.py", line 177, in __call__
+    return self.predict(source, stream, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\engine\model.py", line 536, in predict
+    return self.predictor.predict_cli(source=source) if is_cli else self.predictor(source=source, stream=stream)
+                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\engine\predictor.py", line 225, in __call__
+    return list(self.stream_inference(source, model, *args, **kwargs))  # merge list of Results into one
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\_contextlib.py", line 36, in generator_context
+    response = gen.send(None)
+               ^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\engine\predictor.py", line 307, in stream_inference
+    self.model.warmup(
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\nn\autobackend.py", line 307, in warmup
+    self.forward(im)  # warmup model
+    ^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\nn\autobackend.py", line 273, in forward
+    y = self.backend.forward(im, **forward_kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\nn\backends\pytorch.py", line 90, in forward
+    return self.model(im, augment=augment, visualize=visualize, embed=embed, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\nn\tasks.py", line 142, in forward
+    return self.predict(x, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\nn\tasks.py", line 159, in predict
+    return self._predict_once(x, profile, visualize, embed)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\nn\tasks.py", line 181, in _predict_once
+    x = m(x)  # run
+        ^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\nn\modules\block.py", line 312, in forward
+    return self.cv2(torch.cat(y, 1))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\ultralytics\nn\modules\conv.py", line 89, in forward_fuse
+    return self.act(self.conv(x))
+                    ^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\conv.py", line 554, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\conv.py", line 549, in _conv_forward
+    return F.conv2d(
+           ^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 2.00 MiB. GPU 0 has a total capacity of 2.00 GiB of which 0 bytes is free. Of the allocated memory 23.64 MiB is allocated by PyTorch, and 18.36 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

@@ -1,0 +1,22 @@
+image_path,label,source,weight
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\caries\val_2_ann39.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\deep_caries\val_10_ann161.png,deep_caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\caries\val_10_ann158.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\caries\val_24_ann53.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\caries\val_49_ann101.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\deep_caries\val_3_ann36.png,deep_caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\deep_caries\val_45_ann145.png,deep_caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\caries\val_28_ann120.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\caries\val_12_ann172.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\caries\val_32_ann133.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\caries\val_22_ann176.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\caries\val_33_ann16.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\deep_caries\val_13_ann93.png,deep_caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\caries\val_27_ann73.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\caries\val_31_ann62.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\train\caries\val_40_ann84.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\val\caries\val_4_ann153.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\val\deep_caries\val_39_ann32.png,deep_caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\val\caries\val_35_ann164.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\val\caries\val_43_ann110.png,caries,dentex_validation_triple,1.0
+C:\Users\junho\Desktop\4학년 1학기\딥러닝실습\dental\data\severity\images\val\caries\val_22_ann178.png,caries,dentex_validation_triple,1.0

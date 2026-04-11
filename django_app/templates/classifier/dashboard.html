@@ -1,0 +1,161 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental AI Detection Studio</title>
+    <link rel="stylesheet" href="{% static 'classifier/dashboard.css' %}">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="hero">
+            <div class="hero-copy">
+                <p class="eyebrow">Dental X-ray Detection Service</p>
+                <h1>파노라마 X-ray 기반 치과 질환 의심 부위를 한 화면에서 분석합니다.</h1>
+                <p class="hero-text">
+                    업로드한 이미지를 즉시 시각화하고, 탐지 박스와 신뢰도를 함께 보여주는
+                    설명 가능한 2차 의견용 인터페이스입니다.
+                </p>
+                <div class="hero-actions">
+                    <a class="button button-primary" href="#workspace">분석 시작</a>
+                    <a class="button button-secondary" href="#detection-list">결과 영역 보기</a>
+                </div>
+                <div class="hero-tags">
+                    <span>YOLOv8 Detection</span>
+                    <span>`POST /predict/`</span>
+                    <span>`GET /health/`</span>
+                </div>
+            </div>
+        </header>
+
+        <main id="workspace" class="workspace">
+            <section class="upload-card">
+                <div class="section-heading">
+                    <p class="section-kicker">Analysis Console</p>
+                    <h2>이미지 업로드</h2>
+                    <p>X-ray 이미지를 올리면 브라우저에서 미리보기와 탐지 결과를 함께 확인합니다.</p>
+                </div>
+
+                <form id="predict-form" class="upload-form">
+                    <label id="dropzone" class="dropzone" for="image-input">
+                        <input id="image-input" name="image" type="file" accept="image/png,image/jpeg,image/jpg,image/webp">
+                        <span class="dropzone-title">이미지를 끌어놓거나 클릭해서 선택</span>
+                        <span class="dropzone-subtitle">PNG, JPG, WEBP 지원</span>
+                    </label>
+
+                    <div class="file-meta">
+                        <div>
+                            <span class="meta-label">선택 파일</span>
+                            <strong id="file-name">아직 선택되지 않음</strong>
+                        </div>
+                        <div>
+                            <span class="meta-label">크기</span>
+                            <strong id="file-size">-</strong>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button id="submit-button" class="button button-primary" type="submit">AI 분석 실행</button>
+                        <button id="reset-button" class="button button-ghost" type="button">초기화</button>
+                    </div>
+                </form>
+
+                <div id="status-box" class="status-box" aria-live="polite">
+                    업로드 후 분석을 실행하면 탐지 결과가 오른쪽 뷰어와 아래 목록에 반영됩니다.
+                </div>
+
+                <div class="notice-card">
+                    <span class="notice-badge">Notice</span>
+                    <p>
+                        본 서비스는 의료 진단 확정 도구가 아니라 의사결정 보조용 2차 의견 인터페이스입니다.
+                        최종 판단은 치과 전문의 상담이 필요합니다.
+                    </p>
+                </div>
+            </section>
+
+            <section class="viewer-card">
+                <div class="viewer-header">
+                    <div>
+                        <p class="section-kicker">Explainable Output</p>
+                        <h2>탐지 결과 시각화</h2>
+                    </div>
+                    <div class="viewer-stats">
+                        <span class="mini-stat">
+                            <small>Detections</small>
+                            <strong id="detection-count">0</strong>
+                        </span>
+                        <span class="mini-stat">
+                            <small>Top Confidence</small>
+                            <strong id="top-confidence">-</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="viewer-stage">
+                    <div id="viewer-empty" class="viewer-empty">
+                        <p>선택한 이미지를 여기에 표시합니다.</p>
+                        <small>분석 후에는 bbox와 클래스 색상이 이 영역에 오버레이됩니다.</small>
+                    </div>
+                    <div id="viewer-media" class="viewer-media is-hidden">
+                        <img id="preview-image" alt="Uploaded dental x-ray preview">
+                        <canvas id="overlay-canvas"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <section class="insight-grid">
+            <article class="result-card">
+                <div class="section-heading compact">
+                    <p class="section-kicker">Detection Summary</p>
+                    <h2>탐지 목록</h2>
+                </div>
+                <div id="summary-strip" class="summary-strip">
+                    아직 분석 결과가 없습니다.
+                </div>
+                <div id="detection-list" class="detection-list">
+                    <div class="placeholder-row">탐지 결과가 생기면 클래스, confidence, 좌표가 여기에 정리됩니다.</div>
+                </div>
+            </article>
+
+            <article class="legend-card">
+                <div class="section-heading compact">
+                    <p class="section-kicker">Disease Classes</p>
+                    <h2>지원 클래스</h2>
+                </div>
+                <div class="legend-list">
+                    {% for item in class_info %}
+                    <div class="legend-item">
+                        <span class="legend-swatch" style="background: {{ item.color }};"></span>
+                        <div>
+                            <strong>{{ item.label }}</strong>
+                            <p>{{ item.description }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </article>
+
+            <article class="future-card">
+                <div class="section-heading compact">
+                    <p class="section-kicker">Planned Extension</p>
+                    <h2>치료비 추정 영역</h2>
+                </div>
+                <p class="future-copy">
+                    아키텍처 문서의 다음 단계에 맞춰, 향후에는 탐지 개수와 위치 정보를 기반으로
+                    치료 옵션별 예상 비용 구간을 연결할 수 있습니다.
+                </p>
+                <div class="future-steps">
+                    <span>Detection Count</span>
+                    <span>Treatment Mapping</span>
+                    <span>Cost Range Output</span>
+                </div>
+            </article>
+        </section>
+    </div>
+
+    {{ class_info|json_script:"class-info-data" }}
+    <script src="{% static 'classifier/dashboard.js' %}" defer></script>
+</body>
+</html>

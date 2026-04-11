@@ -1,0 +1,13 @@
+{
+  "test_loss": 0.880279190838337,
+  "f1_macro": 0.5659939820978233,
+  "f1_micro": 0.6721311475409836,
+  "auroc_macro": 0.6181694748606513,
+  "auroc_micro": 0.720477764423077,
+  "recall_per_class": {
+    "caries": 0.8823529411764706,
+    "deep_caries": 0.75,
+    "periapical_lesion": 0.5,
+    "impacted_tooth": 0.88
+  }
+}

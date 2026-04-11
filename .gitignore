@@ -1,0 +1,11 @@
+# Datasets
+data/
+data/raw/dentex/.cache/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Notebook/runtime-local files
+.ipynb_checkpoints/
+db.sqlite3
