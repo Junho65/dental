@@ -1,0 +1,9 @@
+path: C:/Pywork/dental/dental/data/detection_merged_umfih
+train: C:/Pywork/dental/dental/artifacts/detection/training_assets/merged_detection_deep_caries_x50_train.txt
+val: images/val
+test: images/test
+names:
+- caries
+- deep_caries
+- periapical_lesion
+- impacted_tooth

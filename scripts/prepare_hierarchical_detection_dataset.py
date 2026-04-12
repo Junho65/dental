@@ -99,30 +99,13 @@ def copy_split(split: str, dataset_root: Path, config: dict, out_root: Path, src
     return stats
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Collapse caries/deep_caries into caries_family for hierarchical detection."
-    )
-    parser.add_argument(
-        "--data",
-        type=Path,
-        default=Path("data/detection_merged/merged_detection.yaml"),
-        help="Source YOLO YAML path with the original 4-class layout.",
-    )
-    parser.add_argument(
-        "--out",
-        type=Path,
-        default=Path("data/detection_hierarchical"),
-        help="Output YOLO dataset root for hierarchical detection.",
-    )
-    args = parser.parse_args()
-
-    data_path = args.data.resolve()
+def prepare_hierarchical_dataset(data_path: Path, out_root: Path) -> Path:
+    data_path = data_path.resolve()
     config = load_data_config(data_path)
     dataset_root = resolve_dataset_root(data_path, config)
     src_names = get_class_names(config)
 
-    out_root = args.out.resolve()
+    out_root = out_root.resolve()
     if out_root.exists() and any(out_root.iterdir()):
         raise SystemExit(f"Output {out_root} is not empty. Choose a new folder or delete it first.")
 
@@ -161,6 +144,28 @@ def main() -> None:
         "Totals: "
         + " ".join(f"{name}={total[idx]}" for idx, name in enumerate(TARGET_CLASS_NAMES))
     )
+    return yaml_path
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Collapse caries/deep_caries into caries_family for hierarchical detection."
+    )
+    parser.add_argument(
+        "--data",
+        type=Path,
+        default=Path("data/detection_merged/merged_detection.yaml"),
+        help="Source YOLO YAML path with the original 4-class layout.",
+    )
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=Path("data/detection_hierarchical"),
+        help="Output YOLO dataset root for hierarchical detection.",
+    )
+    args = parser.parse_args()
+
+    prepare_hierarchical_dataset(data_path=args.data, out_root=args.out)
 
 
 if __name__ == "__main__":

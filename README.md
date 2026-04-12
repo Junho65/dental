@@ -65,32 +65,158 @@ duplicate the image bytes on the same drive.
 Train with the new merged dataset:
 
 ```bash
-python scripts/train_detection.py --data data/detection_merged_umfih/merged_detection.yaml
+python train_detection.py
 ```
+
+By default, `python train_detection.py` now prepares a hierarchical detector if needed and trains on:
+- `data/detection_hierarchical/hierarchical_detection.yaml`
+- classes: `caries_family`, `periapical_lesion`, `impacted_tooth`
+
+## 2C) Preprocessing Script Guide
+
+Use the preprocessing scripts below as the main execution guide. `ARCHITECTURE.md` describes the
+system conceptually, while this section is the source of truth for script-level workflow.
+
+### `scripts/prepare_detection_dataset.py`
+
+Purpose:
+- Convert labeled DENTEX data into the project's 4-class YOLO detection format.
+
+Input:
+- Raw DENTEX files under `data/raw/dentex`
+
+Output:
+- `data/detection/images/{train,val,test}`
+- `data/detection/labels/{train,val,test}`
+- `data/detection/dentex_detection.yaml`
+
+When to run:
+- First, when building the base DENTEX detection dataset
+
+Command:
+
+```bash
+python scripts/prepare_detection_dataset.py
+```
+
+### `scripts/prepare_cariesxrays_yolo.py`
+
+Purpose:
+- Convert CariesXrays Pascal VOC annotations into YOLO format aligned to the project's class order.
+
+Input:
+- Raw CariesXrays dataset under `data/raw/cariesxrays`
+
+Output:
+- `data/detection_cariesxrays/images/{train,val,test}`
+- `data/detection_cariesxrays/labels/{train,val,test}`
+- `data/detection_cariesxrays/cariesxrays_yolo.yaml`
+
+When to run:
+- After preparing DENTEX, when you want to expand the detector with additional caries examples
+
+Typical command:
+
+```bash
+python scripts/prepare_cariesxrays_yolo.py --raw data/raw/cariesxrays --out data/detection_cariesxrays --stem-prefix cx_
+```
+
+### `scripts/prepare_umfih_yolo.py`
+
+Purpose:
+- Remap the UMFIH YOLO dataset into the project's 4-class detection schema.
+
+Input:
+- Extracted UMFIH dataset under `data/raw/umfih/extracted`
+
+Output:
+- `data/detection_umfih/images/{train,val,test}`
+- `data/detection_umfih/labels/{train,val,test}`
+- `data/detection_umfih/umfih_detection.yaml`
+
+When to run:
+- After downloading and extracting UMFIH, when you want to add pathology coverage beyond the base dataset
+
+Command:
+
+```bash
+python scripts/prepare_umfih_yolo.py
+```
+
+### `scripts/merge_yolo_detection_datasets.py`
+
+Purpose:
+- Merge two YOLO detection datasets that share the same class order into one training dataset.
+
+Input:
+- A base YOLO dataset such as `data/detection` or `data/detection_merged`
+- An extra YOLO dataset such as `data/detection_cariesxrays` or `data/detection_umfih`
+
+Output:
+- A merged YOLO dataset root and YAML file, such as `data/detection_merged` or `data/detection_merged_umfih`
+
+When to run:
+- After the individual YOLO datasets have been prepared and you want a single combined detector dataset
+
+Typical commands:
+
+```bash
+python scripts/merge_yolo_detection_datasets.py --base data/detection --extra data/detection_cariesxrays --out data/detection_merged
+python scripts/merge_yolo_detection_datasets.py --base data/detection_merged --extra data/detection_umfih --out data/detection_merged_umfih
+```
+
+### Recommended execution order
+
+1. `python scripts/prepare_detection_dataset.py`
+2. `python scripts/prepare_cariesxrays_yolo.py --raw data/raw/cariesxrays --out data/detection_cariesxrays --stem-prefix cx_`
+3. `python scripts/prepare_umfih_yolo.py`
+4. `python scripts/merge_yolo_detection_datasets.py --base data/detection --extra data/detection_cariesxrays --out data/detection_merged`
+5. `python scripts/merge_yolo_detection_datasets.py --base data/detection_merged --extra data/detection_umfih --out data/detection_merged_umfih`
+6. `python train_detection.py`
 
 ## 3) Train detection model
 
 ```bash
-python scripts/train_detection.py
+python train_detection.py
 ```
 
 Weights output:
 - `artifacts/detection/yolov8n_dentex/weights/best.pt`
 
 Current training defaults:
-- `epochs=30`
-- `imgsz=512`
-- `batch=2`
-- `workers=0`
-- `deep_caries` train-image oversampling enabled
+- `epochs=50`
+- `imgsz=416`
+- `batch=16`
+- `workers=4`
+- default dataset: `data/detection_hierarchical/hierarchical_detection.yaml`
+- `deep_caries` train-image oversampling disabled by default
 - TensorBoard scalar logging enabled
+
+Recommended local training command for the current GTX 1660 environment:
+
+```bash
+python train_detection.py
+```
+
+The root command already defaults to:
+- `data=data/detection_hierarchical/hierarchical_detection.yaml`
+- `imgsz=416`
+- `batch=16`
+- `workers=4`
+
+Use extra flags only when you want to override the defaults:
+
+```bash
+python train_detection.py --name yolov8n_experiment
+python train_detection.py --batch 8 --no-amp
+```
 
 If you want to oversample a different class or train on a hierarchical dataset that no longer has
 `deep_caries` as a standalone class:
 
 ```bash
-python scripts/train_detection.py --data data/detection_hierarchical/hierarchical_detection.yaml --no-deep-caries-balance
-python scripts/train_detection.py --oversample-class impacted_tooth
+python train_detection.py --data data/detection_hierarchical/hierarchical_detection.yaml --oversample-class impacted_tooth --deep-caries-balance
+python train_detection.py --data data/detection_merged_umfih/merged_detection.yaml --deep-caries-balance
 ```
 
 ## 3B) Hierarchical detection + severity classifier
@@ -107,7 +233,7 @@ Build the hierarchical detection dataset from the merged YOLO dataset:
 
 ```bash
 python scripts/prepare_hierarchical_detection_dataset.py --data data/detection_merged/merged_detection.yaml
-python scripts/train_detection.py --data data/detection_hierarchical/hierarchical_detection.yaml --no-deep-caries-balance
+python train_detection.py --data data/detection_hierarchical/hierarchical_detection.yaml --no-deep-caries-balance
 ```
 
 Prepare labeled severity crops from DENTEX and unlabeled lesion crops from CariesXrays:
@@ -139,7 +265,7 @@ Or set:
 TensorBoard while training:
 
 ```bash
-python scripts/train_detection.py --name yolov8n_live
+python train_detection.py --name yolov8n_live
 tensorboard --logdir "$env:TEMP\dental_yolo_tb" --reload_interval 2
 ```
 
@@ -208,5 +334,5 @@ If you see `WinError 1455` while importing `torch`/`ultralytics`, Windows virtua
 - Re-run:
 
 ```bash
-python scripts/train_detection.py
+python train_detection.py
 ```

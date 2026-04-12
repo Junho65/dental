@@ -1,5 +1,6 @@
 import argparse
 import math
+import os
 import random
 import re
 import tempfile
@@ -7,6 +8,11 @@ from collections import Counter
 from pathlib import Path
 
 import yaml
+
+_yolo_config_root = (Path.cwd() / ".yolo_config").resolve()
+_yolo_config_root.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("YOLO_CONFIG_DIR", str(_yolo_config_root))
+
 from ultralytics import YOLO, settings as ultralytics_settings
 
 
@@ -134,9 +140,9 @@ def build_balanced_training_data(data_path: Path, target_class_name: str) -> Pat
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", default="data/detection/dentex_detection.yaml")
+    parser.add_argument("--data", default="data/detection_hierarchical/hierarchical_detection.yaml")
     parser.add_argument("--model", default="yolov8n.pt")
-    parser.add_argument("--epochs", type=int, default=30)
+    parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument(
         "--patience",
         type=int,
@@ -146,8 +152,8 @@ def main():
     parser.add_argument("--imgsz", type=int, default=416)
     parser.add_argument("--batch", type=int, default=16)
     parser.add_argument("--project", default="artifacts/detection")
-    parser.add_argument("--name", default="yolov8n_dentex")
-    parser.add_argument("--workers", type=int, default=0)
+    parser.add_argument("--name", default="yolov8n_hierarchical")
+    parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--device", default="0")
     parser.add_argument(
         "--amp",
@@ -165,7 +171,7 @@ def main():
     parser.add_argument(
         "--deep-caries-balance",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=False,
         help="Oversample train images that contain the configured target class to reduce class imbalance.",
     )
     parser.add_argument(

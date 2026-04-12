@@ -1,695 +1,441 @@
-# DENTAL AI Project Architecture
+﻿# Dental AI Project Architecture
 
-## 1) 목표
+## 1. 프로젝트 개요
 
-본 프로젝트는 파노라마 치과 X-ray에서 질환 의심 부위를 탐지하고, 그 결과를 웹 API와 향후 비용 추정 로직으로 연결하는 detection-first 파이프라인이다.
+본 프로젝트는 치과 X-ray 이미지에서 병변을 자동 검출하고, 충치 계열 병변은 추가 분류기를 통해 `caries`와
+`deep_caries`로 세분화하는 2-stage 진단 보조 시스템을 구축하는 것을 목표로 한다.
 
-현재 구현 범위는 다음과 같다.
+이 프로젝트의 문제의식에는 국내 치과 진료 현장에서 제기되는 과잉진료 우려와 진료비 설명 부족 문제가 포함된다.
+한국소비자원(2025)은 치과 관련 피해구제 신청에서 진료비 관련 분쟁이 증가하고 있으며, 치료비용계획서 제공
+활성화가 필요하다고 지적했다. 또한 파노라마 X-ray 판독은 병변이 작거나 겹쳐 보이는 경우 해석 난도가 높아,
+환자 입장에서는 진단의 적절성을 스스로 검증하기 어렵다. 이러한 맥락에서 설명 가능한 보조 판독 도구에 대한
+수요가 존재한다.
 
-- 공개 X-ray 데이터셋 수집 및 로컬 적재
-- YOLO detection 학습용 데이터셋 생성
-- hierarchical detection remap 및 lesion crop 분류 데이터셋 생성
-- YOLOv8 기반 질환 탐지 학습 및 평가
-- `caries` vs `deep_caries` severity classifier 학습 및 pseudo-label 실험
-- Django 기반 2-stage 추론 API 제공
-- TensorBoard를 통한 학습 모니터링
+본 프로젝트는 병변 위치와 유형을 일관된 기준으로 제시함으로써 판독의 재현성을 높이고 설명 가능성을 보완하는
+진단 보조 시스템을 지향한다. 궁극적으로는 임상의의 판단을 지원하고, 환자와 의료진 사이의 커뮤니케이션 근거를
+강화하는 것이 목적이다. 장기적으로는 X-ray 상의
+병변 분류 결과를 바탕으로 치료 옵션별 적정 진료비 범위를 제시하는 보조 모듈까지 확장하는 것을 목표로 하며,
+이 과정에서는 치과의사 자문을 반영해 임상적 타당성과 현실성을 확보한다.
 
+현재 기본 학습 흐름은 다음과 같다.
 
-## 2) 문제 정의
+- 1단계 detection: `caries_family`, `periapical_lesion`, `impacted_tooth`
+- 2단계 severity classification: `caries` vs `deep_caries`
+- 서비스 형태: Django 기반 웹서비스, 프런트엔드 업로드 화면과 `/predict/` API를 함께 제공
+- 사용자 흐름: 사용자가 웹 화면에서 파노라마 X-ray 이미지를 업로드하면 백엔드 모델이 추론을 수행
+- 향후 확장: 병변 유형별 치료 옵션과 적정 진료비 범위 제시 모듈 추가
 
-현재 프로젝트는 두 가지 문제 정의를 함께 지원한다.
+프로젝트의 핵심 방향은 다음과 같다.
 
-### 2.0 Flat baseline
+- 작은 병변과 위치 정보를 함께 다루기 위해 classification보다 detection을 우선 채택
+- `deep_caries` 데이터 부족과 coarse label 문제를 줄이기 위해 hierarchical detection 구조 도입
+- 로컬 학습, 평가, 서빙이 가능한 local-first 워크플로우 유지
 
-- 입력: 파노라마 치과 X-ray 이미지
-- 출력: `bbox`, `class`, `confidence`
-- 클래스(4개):
-  - `caries`
-  - `deep_caries`
-  - `periapical_lesion`
-  - `impacted_tooth`
+## 2. 프로젝트 구성도
 
-Detection을 채택한 이유:
+### 2.1 전체 시스템 아키텍처
 
-- 단순 분류보다 위치 근거를 함께 제공할 수 있음
-- 분할보다 라벨링 비용과 구현 복잡도가 낮음
-- 웹서비스 응답 형태와 직접 연결하기 쉬움
+```mermaid
+graph TD
+    raw1["DENTEX"]
+    raw2["CariesXrays"]
+    raw3["UMFIH"]
+    user["End User"]
+    web["Web Frontend"]
 
+    subgraph build["Dataset Build"]
+        prep1["DENTEX YOLO Preprocess"]
+        prep2["CariesXrays YOLO Preprocess"]
+        prep3["UMFIH Class Remap"]
+        merge["Merged Detection Dataset Build"]
+        hier["Hierarchical Detection Remap"]
+        sev["Severity Crop Dataset Build"]
+    end
 
-### 2.1 Hierarchical 경로
+    subgraph train["Training"]
+        det["Hierarchical Detection Training"]
+        sevtrain["Severity Classifier Training"]
+        pseudo["Pseudo-label Refinement"]
+    end
 
-`CariesXrays`는 현재 `caries` 계열 bbox만 제공하고 `deep_caries`를 따로 나누지 않기 때문에,
-flat 4-class detection만으로 severity를 직접 학습시키면 coarse label noise가 커질 수 있다.
+    subgraph serve["Serving"]
+        yolo["YOLO Detector"]
+        cls["Severity Classifier"]
+        cost["Cost Estimation Module"]
+        rule["Dental Expert Rule Base"]
+        api["Django /predict/ API"]
+    end
 
-이를 보완하기 위해 프로젝트는 다음 hierarchical 경로도 지원한다.
+    raw1 -->|"JSON annotations + images"| prep1
+    raw2 -->|"VOC XML + images"| prep2
+    raw3 -->|"YOLO labels + images"| prep3
+    prep1 -->|"YOLO images + labels"| merge
+    prep2 -->|"YOLO images + labels"| merge
+    prep3 -->|"Remapped YOLO labels"| merge
+    merge -->|"4-class merged detection dataset"| hier
+    raw1 -->|"caries/deep_caries lesion source"| sev
+    raw2 -->|"caries lesion source"| sev
+    hier -->|"hierarchical train/val/test YAML"| det
+    sev -->|"cropped lesion images + class labels"| sevtrain
+    sevtrain -->|"teacher classifier checkpoint"| pseudo
+    pseudo -->|"pseudo-labeled lesion crops"| sevtrain
+    det -->|"detector checkpoint"| yolo
+    sevtrain -->|"severity classifier checkpoint"| cls
+    user -->|"panoramic X-ray upload"| web
+    web -->|"multipart image request"| api
+    yolo -->|"bbox + coarse lesion class"| api
+    cls -->|"caries vs deep_caries refinement"| api
+    api -.->|"planned lesion summary"| cost
+    rule -.->|"treatment and fee heuristics"| cost
+    cost -.->|"estimated treatment options + fee range"| api
+    api -->|"inference JSON + visualization data"| web
+    web -->|"result view"| user
+```
 
-- 1단계 detection 클래스:
-  - `caries_family`
-  - `periapical_lesion`
-  - `impacted_tooth`
-- 2단계 severity classification:
-  - `caries`
-  - `deep_caries`
-- 선택적 semi-supervised:
-  - CariesXrays lesion crop에 pseudo-label 생성 후 severity classifier 재학습
+### 2.2 추론 흐름
 
-즉, localization은 detection이 담당하고, `caries` vs `deep_caries` 세분화는 ROI crop classifier가 뒤에서 수행한다.
+```mermaid
+graph LR
+    user["User"] -->|"image upload"| web["Web Frontend"]
+    web -->|"multipart/form-data request"| api["Django /predict/ API"]
+    api -->|"decoded X-ray tensor"| det["Hierarchical Detector"]
+    det -->|"bbox + confidence + coarse class"| bbox["caries_family / periapical_lesion / impacted_tooth"]
+    bbox -->|"caries_family ROI only"| crop["ROI Crop"]
+    crop -->|"cropped lesion tensor"| sev["Severity Classifier"]
+    sev -->|"caries / deep_caries score"| refine["Severity Refinement"]
+    bbox -->|"periapical_lesion / impacted_tooth kept as-is"| merge["Result Merge"]
+    refine -->|"refined caries label"| merge
+    merge -->|"lesion summary JSON"| out["Response Builder"]
+    merge -.->|"planned lesion summary"| cost["Cost Estimation Module"]
+    rule["Dental Expert Rule Base"] -.->|"treatment rules + fee table"| cost
+    cost -.->|"estimated treatment options + fee range"| out
+    out -->|"JSON + overlay metadata"| web
+    web -->|"prediction result page"| user
+```
 
-현재 코드 기준으로는 flat baseline을 유지하면서도, 데이터 제약이 큰 `deep_caries`는 hierarchical 경로를 기본 실험 축으로 삼도록 구조를 확장한 상태다.
+### 2.3 현재 기본 학습 흐름
 
+- 기본 학습 흐름: hierarchical detection training
+- 기본 detection 데이터 구성: merged detection dataset에서 파생된 hierarchical dataset
+- 기본 detection backbone: YOLOv8n
+- 기본 epoch: `50`
+- 기본 해상도: `imgsz=416`
+- 기본 배치 크기: `batch=16`
+- 기본 DataLoader workers: `workers=4`
+- 기본 early stopping patience: `10`
 
-## 3) 데이터 소스와 라벨 매핑
+hierarchical detection 데이터가 준비되지 않은 경우에는 merged detection 데이터에서 coarse class 체계로
+자동 재구성한 뒤 학습을 시작한다.
+
+## 3. 사용할 데이터셋
 
 ### 3.1 DENTEX
 
-- 원천: Hugging Face `LUNA0206/DENTEX`
-- 로컬 원본 경로: `data/raw/dentex/DENTEX`
-- 전처리 스크립트: `scripts/prepare_detection_dataset.py`
+- 용도: 기본 치과 X-ray detection 라벨 소스
+- 원본 구조: JSON annotation 기반
+- 프로젝트 내 역할:
+  - detection supervised training source
+  - severity crop supervised source
 
-DENTEX는 현재 4개 detection 클래스로 매핑된다.
+사용 클래스:
 
 - `caries`
 - `deep_caries`
 - `periapical_lesion`
 - `impacted_tooth`
 
-또한 hierarchical 경로에서는 DENTEX의 `caries` / `deep_caries` annotation이 lesion crop 분류 데이터의 supervised source로도 사용된다.
-
 ### 3.2 CariesXrays
 
-- 원천: AAAI 2024 CariesXrays 공개 릴리스
-- 로컬 원본 경로: `data/raw/cariesxrays`
-- 전처리 스크립트: `scripts/prepare_cariesxrays_yolo.py`
+- 용도: 충치 계열 bbox 확장 데이터
+- 원본 구조: Pascal VOC XML
+- 프로젝트 내 역할:
+  - detection에서 충치 계열 표본 확장
+  - severity pseudo-label 후보 crop source
 
-CariesXrays는 Pascal VOC XML 기반 bbox 데이터셋이며, 이 프로젝트에서는 원천 라벨 `Decay`만 사용한다.
+프로젝트 매핑:
 
-- VOC label `Decay` -> project class `caries` (`class_id=0`)
-- 나머지 3개 클래스는 CariesXrays에서 추가되지 않음
+- VOC `Decay` -> project class `caries`
 
-즉 CariesXrays는 이 프로젝트에서 `caries` 클래스 증강용 단일-class detection 데이터로 쓰인다.
+### 3.3 UMFIH Dental Pathology Dataset
 
-hierarchical 경로에서는 같은 CariesXrays bbox를 다음 두 용도로 쓴다.
+- 용도: 추가 병변 데이터 보강
+- 원본 구조: YOLO format
+- 프로젝트 내 역할:
+  - detection 데이터 다양성 확장
+  - `periapical_lesion`, `impacted_tooth`, 일부 `caries` 보강
 
-- `caries_family` detection 학습용 lesion bbox
-- severity pseudo-label 생성을 위한 unlabeled lesion crop source
+프로젝트 매핑:
 
+- `Carious lesion (4)` -> `caries`
+- `Apical periodontitis (7)` -> `periapical_lesion`
+- `Impacted tooth (6)` -> `impacted_tooth`
 
-### 3.3 Hierarchical 라벨 재구성
+### 3.4 현재 기본 학습 데이터셋
 
-hierarchical detection에서는 기존 4-class 라벨을 아래처럼 다시 묶는다.
+현재 기본 detection 학습은 merged detection 데이터에서 파생된 hierarchical 데이터셋을 사용한다.
+
+- 원본 merged dataset classes:
+  - `caries`
+  - `deep_caries`
+  - `periapical_lesion`
+  - `impacted_tooth`
+- hierarchical dataset classes:
+  - `caries_family`
+  - `periapical_lesion`
+  - `impacted_tooth`
+
+현재 로컬에 준비된 active split 규모:
+
+- `train`: 5405 images
+- `val`: 745 images
+- `test`: 1316 images
+
+### 3.5 Severity 분류 데이터셋
+
+충치 계열 refinement를 위해 별도 crop classification 데이터셋을 사용한다.
+
+- 입력: lesion crop
+- 출력 클래스:
+  - `caries`
+  - `deep_caries`
+
+추가로 CariesXrays lesion crop은 unlabeled pool로 저장한 뒤 pseudo-labeling에 사용할 수 있다.
+
+## 4. 데이터 전처리
+
+### 4.1 Detection 전처리
+
+Detection 데이터 전처리 단계는 다음과 같다.
+
+1. DENTEX JSON annotation을 YOLO bbox format으로 변환
+2. CariesXrays VOC annotation을 YOLO format으로 변환
+3. UMFIH YOLO annotation을 프로젝트 4-class 체계로 remap
+4. 여러 detection 데이터셋을 하나의 merged dataset으로 병합
+5. 필요 시 train 이미지 oversampling manifest 생성
+
+이 단계의 세부 실행 순서와 사용 명령은 별도 실행 가이드 문서에서 관리한다.
+
+### 4.2 Hierarchical detection 전처리
+
+Hierarchical detection에서는 4-class detection 라벨을 3-class coarse 라벨로 재구성한다.
 
 - `caries` -> `caries_family`
 - `deep_caries` -> `caries_family`
 - `periapical_lesion` -> `periapical_lesion`
 - `impacted_tooth` -> `impacted_tooth`
 
-즉, detection 단계에서는 충치 계열 병변을 하나의 coarse class로 잡고, 세부 depth 판단은 별도 classifier가 맡는다.
+이 단계의 실제 실행 절차와 명령은 별도 실행 가이드 문서에서 설명한다.
 
+### 4.3 Severity 데이터 전처리
 
-## 4) 현재 로컬 데이터셋 구성
+Severity 데이터셋은 DENTEX lesion annotation을 crop으로 잘라 분류 문제로 재구성한다.
 
-### 4.1 DENTEX YOLO 변환 결과
+- labeled crop 생성
+- `train/val/test` CSV 생성
+- optional unlabeled crop pool 생성
 
-- 경로: `data/detection`
-- YAML: `data/detection/dentex_detection.yaml`
-- split:
-  - train: 199
-  - val: 28
-  - test: 58
+세부 실행 절차와 데이터 준비 명령은 별도 실행 가이드 문서에서 설명한다.
 
-### 4.2 CariesXrays YOLO 변환 결과
+### 4.4 데이터 분할 전략
 
-- 경로: `data/detection_cariesxrays`
-- YAML: `data/detection_cariesxrays/cariesxrays_yolo.yaml`
-- split:
-  - train: 4176
-  - val: 596
-  - test: 1194
+현재 프로젝트에서 detection split은 데이터셋별 원본 구조를 최대한 유지하거나, 준비 스크립트에서 분할하여 사용한다.
 
-### 4.3 병합 데이터셋
+향후 개선 포인트는 다음과 같다.
 
-- 경로: `data/detection_merged`
-- YAML: `data/detection_merged/merged_detection.yaml`
-- split:
-  - train: 4375
-  - val: 624
-  - test: 1252
+- detection 이미지 단위 multi-label stratified split 도입
+- 희소 클래스(`deep_caries`, `impacted_tooth`) 분포 안정화
+- train/val/test 간 클래스 불균형 완화
 
-병합 데이터셋은 DENTEX의 4-class 구조를 유지하면서 CariesXrays의 `caries` bbox를 추가한 형태다.
+## 5. 사용할 모델들 소개
 
-### 4.4 Hierarchical detection 데이터셋
+### 5.1 Detection 모델
 
-- 경로: `data/detection_hierarchical`
-- YAML: `data/detection_hierarchical/hierarchical_detection.yaml`
-- 클래스(3개):
-  - `caries_family`
-  - `periapical_lesion`
-  - `impacted_tooth`
+기본 detection 모델은 Ultralytics YOLOv8n이다.
 
-이 데이터셋은 `data/detection_merged`의 라벨을 재매핑한 결과물이다.
+- 현재 기본 task: hierarchical 3-class detection
 
-### 4.5 Severity crop 데이터셋
+선택 이유:
 
-- 경로: `data/severity`
-- split CSV:
-  - `train.csv`
-  - `val.csv`
-  - `test.csv`
-- 클래스(2개):
+- 경량 모델로 로컬 GPU에서도 실험 가능
+- bbox detection 성능과 속도의 균형이 좋음
+- Ultralytics 생태계를 이용해 학습, 검증, 체크포인트 관리가 단순함
+
+### 5.2 Severity 분류 모델
+
+충치 세부 단계 분류는 EfficientNet-B0 기반 classifier를 사용한다.
+
+- 기본 모델명: `efficientnet_b0`
+- 입력 크기 기본값: `224`
+- 출력 클래스:
   - `caries`
   - `deep_caries`
 
-raw supervised source는 `validation_triple.json`의 lesion annotation이며, 현재 원천 annotation 수는 다음과 같다.
-
-- `caries`: 101
-- `deep_caries`: 32
-
-### 4.6 Severity unlabeled crop 데이터셋
-
-- 경로: `data/severity_unlabeled`
-- split CSV:
-  - `train.csv`
-  - `val.csv`
-  - `test.csv`
-
-이 데이터셋은 CariesXrays bbox를 crop으로 잘라낸 unlabeled lesion pool이며, pseudo-label 실험에 사용된다.
-
-
-## 5) 시스템 구성
-
-프로젝트는 5개 레이어로 나뉜다.
-
-1. Raw data layer
-   - DENTEX, CariesXrays 원본 저장
-2. Dataset build layer
-   - YOLO 포맷 변환
-   - 다중 데이터셋 병합
-   - hierarchical detection 라벨 재구성
-   - lesion crop supervised / unlabeled dataset 생성
-3. Training layer
-   - YOLOv8 학습
-   - detection class imbalance 완화
-   - severity classifier 학습
-   - pseudo-label 생성 및 재학습
-   - TensorBoard 기록
-   - 필요 시 외부 GPU 환경에서 학습 후 weight 반입
-4. Serving layer
-   - Django `/predict/` 추론 API
-   - detection -> severity refinement
-5. Extension layer
-   - detection 결과 기반 치료비 추정
-
-### 5.1 전체 아키텍처
-
-```mermaid
-%%{init: {'themeVariables': {'fontSize': '18px'}, 'flowchart': {'nodeSpacing': 40, 'rankSpacing': 55, 'padding': 18}}}%%
-graph TD
-    rawDentex["Raw DENTEX"]
-    rawCaries["Raw CariesXrays"]
-
-    subgraph build["Dataset Build"]
-        prepDentex["prepare_detection_dataset.py"]
-        prepCaries["prepare_cariesxrays_yolo.py"]
-        dentexYolo["data/detection"]
-        cariesYolo["data/detection_cariesxrays"]
-        merge["merge_yolo_detection_datasets.py"]
-        mergedYolo["data/detection_merged"]
-        hier["prepare_hierarchical_detection_dataset.py"]
-        hierYolo["data/detection_hierarchical"]
-        sevPrep["prepare_severity_dataset.py"]
-        sevLabeled["data/severity"]
-        sevUnlabeled["data/severity_unlabeled"]
-    end
-
-    subgraph train["Training"]
-        flatTrain["train_detection.py<br/>(flat baseline)"]
-        detTrain["train_detection.py<br/>(hierarchical)"]
-        pseudo["pseudolabel_severity.py"]
-        sevTrain["train_severity_classifier.py"]
-        flatWeights["artifacts/detection/.../best.pt"]
-        detWeights["artifacts/detection/.../best.pt"]
-        sevWeights["artifacts/severity/.../best.pt"]
-        tb["TensorBoard logs"]
-    end
-
-    subgraph serve["Serving"]
-        django["Django /predict/ API"]
-        refine["Detection -> Severity Refinement<br/>(caries_family or flat caries/deep_caries)"]
-        response["Detection + optional refinement JSON"]
-        cost["Cost Estimator (planned)"]
-    end
-
-    rawDentex --> prepDentex
-    rawCaries --> prepCaries
-    prepDentex --> dentexYolo
-    prepCaries --> cariesYolo
-    dentexYolo --> merge
-    cariesYolo --> merge
-    merge --> mergedYolo
-    mergedYolo --> flatTrain
-    mergedYolo --> hier
-    hier --> hierYolo
-    hierYolo --> detTrain
-    rawDentex --> sevPrep
-    cariesYolo --> sevPrep
-    sevPrep --> sevLabeled
-    sevPrep --> sevUnlabeled
-    sevUnlabeled --> pseudo
-    sevLabeled --> sevTrain
-    pseudo --> sevTrain
-    flatTrain --> flatWeights
-    detTrain --> detWeights
-    sevTrain --> sevWeights
-    flatTrain --> tb
-    detTrain --> tb
-    flatWeights --> django
-    detWeights --> django
-    sevWeights --> django
-    django --> refine
-    refine --> response
-    response --> cost
-```
-
-
-## 6) 프로젝트 구조
-
-```text
-dental/
-  data/
-    raw/
-      dentex/                         # DENTEX 원본
-      cariesxrays/                   # CariesXrays 원본(XML + images)
-    detection/                       # DENTEX -> YOLO 변환 결과
-    detection_cariesxrays/           # CariesXrays -> YOLO 변환 결과
-    detection_merged/                # DENTEX + CariesXrays 병합 결과
-    detection_hierarchical/          # 3-class hierarchical detection 데이터셋
-    severity/                        # labeled severity crop 분류 데이터셋
-    severity_unlabeled/              # CariesXrays lesion crop (pseudo-label 대상)
-    processed/                       # 보조 CSV/통계 산출물
-  scripts/
-    download_dataset.py              # DENTEX 다운로드
-    prepare_detection_dataset.py     # DENTEX -> YOLO
-    prepare_cariesxrays_yolo.py      # CariesXrays VOC -> YOLO
-    merge_yolo_detection_datasets.py # YOLO 데이터셋 병합
-    prepare_hierarchical_detection_dataset.py # 4-class YOLO -> hierarchical YOLO
-    prepare_severity_dataset.py      # severity crop dataset + unlabeled crop export
-    train_severity_classifier.py     # caries vs deep_caries 분류기 학습
-    pseudolabel_severity.py          # CariesXrays crop pseudo-label 생성
-    train_detection.py               # YOLO 학습 + TensorBoard
-    eval_detection.py                # detection 평가
-    log_results_csv_to_tensorboard.py
-    watch_results_csv_tensorboard.py
-    install_torch.py
-  django_app/
-    classifier/
-      inference.py
-      views.py
-    config/
-      settings.py
-      urls.py
-  src/
-    severity/                        # severity classifier dataset/model/inference
-  artifacts/
-    detection/                       # 학습 결과 및 weights
-    severity/                        # severity classifier checkpoints
-  reports/
-    detection_metrics.json
-    process_logs/
-  ARCHITECTURE.md
-  README.md
-```
-
-
-## 7) 데이터 처리 프로세스
-
-### 7.1 DENTEX 전처리
-
-`scripts/prepare_detection_dataset.py`가 다음 작업을 수행한다.
-
-1. `validation_triple.json`에서 annotation을 읽음
-2. validation category를 프로젝트 4개 클래스에 매핑
-3. `test_data/disease/label/*.json`도 읽어 bbox를 추출
-4. bbox를 YOLO 형식 `class cx cy w h`로 변환
-5. `train/val/test`로 분할
-6. `data/detection/dentex_detection.yaml` 생성
-
-### 7.2 CariesXrays 전처리
-
-`scripts/prepare_cariesxrays_yolo.py`가 다음 작업을 수행한다.
-
-1. `Annotations/*.xml`와 `JPEGImages/*`를 탐색
-2. Pascal VOC `bndbox`를 읽음
-3. `Decay` 라벨만 유지
-4. `Decay -> caries (class_id=0)`로 매핑
-5. 파일명 충돌 방지를 위해 `cx_` prefix를 적용 가능
-6. `train/val/test`로 분할
-7. `data/detection_cariesxrays/cariesxrays_yolo.yaml` 생성
-
-### 7.3 병합
-
-`scripts/merge_yolo_detection_datasets.py`는 두 YOLO 데이터셋이 같은 클래스 순서를 가진다는 전제 하에 동작한다.
-
-병합 규칙:
-
-- base: `data/detection`
-- extra: `data/detection_cariesxrays`
-- out: `data/detection_merged`
-
-출력:
-
-- `images/{train,val,test}`
-- `labels/{train,val,test}`
-- `merged_detection.yaml`
-
-### 7.4 Hierarchical detection 재구성
-
-`scripts/prepare_hierarchical_detection_dataset.py`는 `data/detection_merged` 또는 다른 4-class YOLO 데이터셋을 입력으로 받아 다음 작업을 수행한다.
-
-1. 기존 YOLO YAML에서 dataset root와 class names를 읽음
-2. 각 label txt를 순회
-3. `caries`, `deep_caries`를 `caries_family`로 재매핑
-4. 이미지와 재매핑된 label을 `data/detection_hierarchical`로 복사 또는 링크
-5. `hierarchical_detection.yaml` 생성
-
-### 7.5 Severity crop 데이터셋 생성
-
-`scripts/prepare_severity_dataset.py`는 다음 두 가지 산출물을 만든다.
-
-1. DENTEX `validation_triple.json`에서 `caries` / `deep_caries` bbox를 읽음
-2. bbox 주변에 margin을 두고 lesion crop을 저장
-3. `train/val/test` split CSV를 `data/severity`에 생성
-4. 선택적으로 CariesXrays YOLO bbox를 crop으로 잘라 `data/severity_unlabeled`를 생성
-
-즉, supervised severity dataset과 pseudo-label 후보 pool을 같은 스크립트에서 준비한다.
-
-### 7.6 데이터 파이프라인 도식
-
-```mermaid
-graph TD
-    a["data/raw/dentex"] --> b["prepare_detection_dataset.py"]
-    c["data/raw/cariesxrays"] --> d["prepare_cariesxrays_yolo.py"]
-    b --> e["data/detection/dentex_detection.yaml"]
-    d --> f["data/detection_cariesxrays/cariesxrays_yolo.yaml"]
-    e --> g["merge_yolo_detection_datasets.py"]
-    f --> g
-    g --> h["data/detection_merged/merged_detection.yaml"]
-    h --> i["prepare_hierarchical_detection_dataset.py"]
-    i --> j["data/detection_hierarchical/hierarchical_detection.yaml"]
-    a --> k["prepare_severity_dataset.py"]
-    f --> k
-    k --> l["data/severity/*.csv"]
-    k --> m["data/severity_unlabeled/*.csv"]
-```
+선택 이유:
 
+- lesion crop 분류에 적합한 경량 CNN
+- 로컬 GPU에서 학습 가능한 크기
+- pseudo-label 재학습 루프와 결합하기 쉬움
 
-## 8) 학습 프로세스
+### 5.3 서빙 구조
 
-### 8.1 학습 입력
-
-기본 detection 학습 엔트리포인트는 `scripts/train_detection.py`다.
-
-실제 학습 실행 위치는 두 가지를 모두 허용한다.
-
-- 로컬 Windows 환경에서 직접 학습
-- 외부 GPU 환경에서 학습 후 생성된 weight를 로컬 프로젝트로 다운로드
-
-현재 프로젝트에서는 로컬 GPU 제약이 크기 때문에, 장시간 학습이나 더 큰 설정의 실험은 외부 GPU 환경에서 수행하고 결과물인 `best.pt`, `last.pt`를 내려받아 사용하는 흐름을 전제로 한다.
-
-주요 입력:
-
-- `--data`: YOLO dataset YAML
-- `--model`: 기본값 `yolov8n.pt`
-- `--epochs`
-- `--imgsz`
-- `--batch`
-- `--device`
-- `--amp/--no-amp`
-- `--tensorboard/--no-tensorboard`
-- `--deep-caries-balance/--no-deep-caries-balance`
-- `--oversample-class`
+Django inference 단계에서는 detection 결과를 그대로 반환하지 않고, 조건부 refinement를 수행한다.
 
-### 8.2 불균형 완화
+- 프런트엔드는 사용자가 파노라마 X-ray 이미지를 업로드하는 웹 화면을 제공한다.
+- 백엔드는 업로드된 이미지를 `/predict/` API로 전달받아 전처리, detection, refinement, 응답 조립을 수행한다.
+- 최종 응답은 bbox, 클래스, confidence, 세부 분류 결과, 향후에는 진료비 추정 정보를 포함하는 JSON 형태를 지향한다.
+- `caries_family`가 검출되면 crop classifier로 세분화
+- flat detector를 쓸 경우에도 `caries` / `deep_caries`를 후처리 refinement 가능
 
-`train_detection.py`는 특정 클래스가 포함된 train 이미지를 반복 삽입하는 방식으로 oversampling을 수행할 수 있다.
+## 6. 성능평가 방안
 
-동작 방식:
+### 6.1 Detection 평가 지표
 
-- train split의 라벨 파일을 순회
-- `--oversample-class`에 해당하는 이미지 탐지
-- 클래스 빈도 기반 repeat factor 계산
-- manifest txt와 balanced YAML을 `artifacts/detection/training_assets`에 생성
+Detection 모델은 다음 지표로 평가한다.
 
-즉, 원본 데이터셋을 직접 수정하지 않고 학습 입력 manifest만 바꿔 imbalance를 완화한다.
+- `precision`
+- `recall`
+- `mAP50`
+- `mAP50-95`
 
-flat baseline에서는 기본값으로 `deep_caries`를 oversample하고, hierarchical detection에서는 보통 `--no-deep-caries-balance` 또는 다른 coarse class 지정이 적절하다.
+이 중 핵심 기준 지표는 `mAP50-95`다.
 
-### 8.3 Severity classifier 학습
+이유:
 
-severity classifier 학습 엔트리포인트는 `scripts/train_severity_classifier.py`다.
+- IoU 0.50부터 0.95까지 여러 임계값에서 평균을 내므로 더 엄격함
+- 단순히 객체를 찾는 것뿐 아니라 bbox 위치 정확도까지 반영함
+- detection 모델 간 상대 비교에 가장 적합함
 
-입력:
+### 6.2 Early Stopping 기준
 
-- `--train-csv`: 기본값 `data/severity/train.csv`
-- `--val-csv`: 기본값 `data/severity/val.csv`
-- `--pseudo-csv`: 선택적 pseudo-label CSV
-- `--model-name`: 기본값 `efficientnet_b0`
-- `--img-size`
-- `--batch-size`
-- `--epochs`
-- `--lr`
-- `--pseudo-weight-scale`
+Detection 학습의 early stopping은 Ultralytics validator가 계산하는 fitness를 기준으로 동작한다.
 
-학습 방식:
+- current detection fitness 기준: `metrics/mAP50-95(B)`
+- 기본 patience: `10`
 
-- lesion crop 분류 문제로 `caries` vs `deep_caries`를 학습
-- labeled sample은 weight `1.0`
-- pseudo-labeled sample은 `confidence * pseudo_weight_scale`로 가중
-- checkpoint는 `artifacts/severity/<run>/best.pt` 등에 저장
+즉, 검증 `mAP50-95(B)`가 일정 epoch 동안 개선되지 않으면 학습을 중단한다.
 
-### 8.4 Pseudo-labeling
+### 6.3 Severity classifier 평가 지표
 
-`scripts/pseudolabel_severity.py`는 unlabeled lesion crop에 teacher classifier를 적용해 high-confidence sample만 선별한다.
+Severity 분류기는 다음 지표를 사용한다.
 
-흐름:
+- `val_loss`
+- `accuracy`
+- `macro F1`
 
-1. `data/severity_unlabeled/*.csv`를 읽음
-2. 현재 severity checkpoint로 각 crop의 class probability 계산
-3. threshold 이상 샘플만 pseudo-label CSV로 저장
-4. `train_severity_classifier.py --pseudo-csv ...`로 재학습
+현재 기본 설정:
 
-즉 semi-supervised는 detection이 아니라 severity classifier 단계에서만 제한적으로 적용한다.
+- best checkpoint 선택 기준: `val_loss`
+- early stopping 기준: `val_loss`
 
-### 8.5 TensorBoard 기록
+### 6.4 실험 비교 방안
 
-Windows 비ASCII 경로 문제를 피하기 위해 Ultralytics 기본 TensorBoard 대신 `torch.utils.tensorboard.SummaryWriter`를 직접 연결한다.
+모델 비교는 다음 원칙으로 수행한다.
 
-기록 위치:
+- 같은 데이터셋에서 비교
+- 같은 `imgsz`에서 비교
+- 가능한 경우 같은 batch / epoch / augmentation 조건 유지
+- detection은 `best.pt` 기준으로 동일한 val/test 셋에서 재평가
 
-- `%TEMP%/dental_yolo_tb/<run_name>`
+주요 비교 축:
 
-기록 정책:
+- flat 4-class vs hierarchical 3-class detection
+- `imgsz=416` vs `imgsz=512`
+- class balancing on/off
+- pseudo-label severity classifier 사용 여부
 
-- `train/box_loss`, `train/cls_loss`, `train/dfl_loss`: batch 단위
-- `lr/*`: epoch 단위
-- `metrics/mAP50_B`, `metrics/mAP50-95_B`, `metrics/precision_B`, `metrics/recall_B`: epoch 단위
-- `val/*`: epoch 단위
+### 6.5 기록 및 모니터링
 
-현재 TensorBoard 연결은 detection training에 적용되어 있으며, severity classifier는 별도 JSON/console metric을 기록한다.
+Detection 학습은 TensorBoard와 `results.csv`를 통해 모니터링한다.
 
-### 8.6 학습 파이프라인 도식
-
-```mermaid
-graph LR
-    detYaml["YOLO dataset YAML"] --> balance["class-aware oversampling"]
-    balance --> detModel["YOLOv8 train"]
-    detModel --> detCkpt["artifacts/detection/.../weights"]
-    detModel --> tb["TensorBoard event files"]
-    sevCsv["data/severity/*.csv"] --> sevTrain["train_severity_classifier.py"]
-    pseudoPool["data/severity_unlabeled/*.csv"] --> pseudo["pseudolabel_severity.py"]
-    pseudo --> sevTrain
-    sevTrain --> sevCkpt["artifacts/severity/.../best.pt"]
-    detCkpt --> eval["eval_detection.py"]
-    eval --> metrics["reports/detection_metrics.json"]
-```
-
-weight 반입 규칙:
-
-- 외부 GPU 학습이 끝나면 detection / severity checkpoint를 로컬로 다운로드
-- detection checkpoint는 `artifacts/detection/<run>/weights` 아래에 둘 수 있음
-- severity checkpoint는 `artifacts/severity/<run>` 아래에 둘 수 있음
-- 서빙 시에는 선택한 checkpoint를 `artifacts/detection/serve/best.pt`, `artifacts/severity/serve/best.pt`로 복사하거나 환경변수로 지정
-- 즉, 학습 실행 위치와 weight 소비 위치를 분리할 수 있다
+주요 기록 항목:
 
-
-## 9) 추론 프로세스
-
-Django 서비스는 학습된 detection weight를 로드해 `/predict/` 요청을 처리한다.
-
-이 weight는 반드시 로컬에서 직접 학습한 결과일 필요는 없으며, 외부 GPU 환경에서 학습 후 다운로드한 `best.pt`를 로컬에 배치해 사용해도 된다.
+- `train/box_loss`
+- `train/cls_loss`
+- `train/dfl_loss`
+- `metrics/mAP50(B)`
+- `metrics/mAP50-95(B)`
+- `metrics/precision(B)`
+- `metrics/recall(B)`
+- `val/*`
 
-기본 입출력 흐름:
-
-1. 사용자가 X-ray 업로드
-2. Django view가 추론 래퍼 호출
-3. YOLO 모델이 bbox/class/confidence 생성
-4. 충치 계열 detection이면 bbox crop을 severity classifier에 전달
-5. JSON 응답 반환
+## 7. 개발 일정
 
-현재 코드 기준 refinement 동작:
+현재 기준 시점은 2026년 4월 2주차이며, 개발 완료 목표 시점은 2026년 6월 2주차로 설정한다. 아래 일정은
+향후 간트차트로 전환하기 쉽도록 주차 단위의 마일스톤 중심으로 정리한다.
 
-1. hierarchical detector를 쓰는 경우 YOLO가 `caries_family` bbox를 검출
-2. flat detector를 쓰는 경우에도 YOLO가 `caries` 또는 `deep_caries`를 검출하면 same ROI refinement 경로를 탈 수 있다
-3. bbox crop을 severity classifier에 전달
-4. classifier가 `caries` 또는 `deep_caries`로 세분화 또는 재판정한다
-5. `/predict/`는 detector 원본 class와 refinement 결과를 함께 반환할 수 있다
+### 7.1 4월 2주차-4월 3주차: 데이터 정비
 
-서빙 weight 규칙:
+- DENTEX, CariesXrays, UMFIH 원본 데이터와 메타정보 재확인
+- detection dataset, hierarchical dataset 재생성 및 경로 검증
+- split 전략 점검 및 stratified split 적용 여부 검토
 
-- detection weight 기본 경로: `artifacts/detection/serve/best.pt`
-- severity weight 기본 경로: `artifacts/severity/serve/best.pt`
-- 환경변수:
-  - `DENTAL_YOLO_WEIGHTS`
-  - `DENTAL_SEVERITY_WEIGHTS`
-  - `DENTAL_SEVERITY_CONF`
+### 7.2 4월 4주차-5월 1주차: Detection baseline 확정
 
-fallback 동작:
+- hierarchical detection 기본 학습 파이프라인 안정화
+- `imgsz`, `batch`, `workers`, `amp` 조합 실험
+- early stopping 기준과 best checkpoint 선정 방식 점검
 
-- severity weight가 없으면 detection 결과를 그대로 반환
-- hierarchical detector에서는 severity confidence가 낮으면 `caries_family`를 유지할 수 있음
-- flat detector에서는 severity confidence가 낮으면 detector의 원래 `caries` / `deep_caries` 예측을 유지할 수 있음
-- 즉, classifier refinement는 optional enhancement다
+### 7.3 5월 2주차-5월 3주차: Severity classifier 고도화
 
-### 9.1 추론 도식
+- labeled crop 기반 baseline classifier 학습
+- class imbalance 보정 및 selection metric 조정
+- best severity checkpoint 선정
 
-여기서 detection 모델은 단일 블랙박스가 아니라, 내부적으로 `YOLOv8` 서브모듈로 구성된다.
+### 7.4 5월 4주차: Pseudo-label 실험
 
-- Backbone: `Conv -> C2f -> SPPF`로 입력 영상의 다중 해상도 feature를 추출
-- Neck: upsample / concat / C2f로 `P3`, `P4`, `P5` feature pyramid를 결합
-- Head: anchor-free split detection head가 각 scale에서 bbox / class score를 예측
+- unlabeled crop에 teacher inference 수행
+- high-confidence pseudo-label 추가
+- pseudo-label 포함 재학습 전후 성능 비교
 
-```mermaid
-graph LR
-    client["Client"] --> api["POST /predict/"]
-    api --> infer["classifier/inference.py"]
+### 7.5 6월 1주차: 서빙 통합 및 API 안정화
 
-    infer --> xray["input X-ray image"]
+- detection + severity refinement API 통합
+- 환경변수 기반 가중치 교체 흐름 정리
+- 에러 핸들링 및 응답 포맷 안정화
 
-    subgraph yolo["YOLOv8 Detector"]
-        direction LR
-        weights["YOLO model weights (.pt)"]
+### 7.6 6월 2주차: 문서화 및 개발 완료
 
-        subgraph backbone["Backbone"]
-            direction TB
-            bb1["Conv stem"]
-            bb2["C2f stages"]
-            bb3["SPPF"]
-        end
+- 실험 결과표 및 모델 비교표 정리
+- 배포/운영 문서 보강
+- 최종 발표용 자료 및 간트차트 정리
 
-        subgraph neck["Neck"]
-            direction TB
-            nk1["Upsample"]
-            nk2["Concat"]
-            nk3["C2f feature fusion"]
-            nk4["P3 / P4 / P5 feature maps"]
-        end
+## 8. 활용 방안
 
-        subgraph head["Head"]
-            direction TB
-            hd1["Anchor-free split head"]
-            hd2["Detect(P3, P4, P5)"]
-            hd3["bbox + class + confidence"]
-        end
-    end
+본 프로젝트의 활용 가능 시나리오는 다음과 같다.
 
-    xray --> backbone
-    weights --> backbone
-    backbone --> neck
-    neck --> head
-    head --> det["detections<br/>(caries_family or flat caries/deep_caries)"]
+- 치과 X-ray 1차 판독 보조
+- 충치 의심 병변의 위치 제안 및 세부 단계 보조 분류
+- 병변 유형 기반 치료 옵션 정리 및 적정 진료비 범위 제시
+- 교육용 annotation 보조 도구
+- 연구용 baseline 및 실험 플랫폼
+- 향후 진단 리포트 자동화와 상담 지원 시스템의 전단계 모듈
 
-    infer --> sev["Severity classifier weights"]
-    det --> crop["lesion crop<br/>(caries_family or flat caries/deep_caries)"]
-    crop --> sev
-    sev --> refine["caries / deep_caries refinement<br/>or flat prediction override"]
-    refine --> json["prediction JSON"]
-```
+추가 확장 가능성:
 
+- 치과의사 자문 기반 진료비 계산 모듈 구축
+- 환자 단위 리포트 생성
+- active learning 기반 재라벨링 루프
+- 다기관 데이터 추가 학습
+- 웹 대시보드와 진료 워크플로우 통합
 
-## 10) 운영 제약과 현재 학습 환경
+## 9. 참고문헌 (Reference)
 
-현재 로컬 학습 환경:
+### 9.1 데이터셋 및 데이터 소스
 
-- Windows
-- NVIDIA GeForce MX450
-- VRAM 2GB
+- Chen, B., Fu, S., Liu, Y., Pan, J., Lu, G., & Zhang, Z. (2024). *CariesXrays: Enhancing caries detection in hospital-scale panoramic dental X-rays via feature pyramid contrastive learning*. Proceedings of the AAAI Conference on Artificial Intelligence, 38(20), 21940-21948. https://doi.org/10.1609/aaai.v38i20.30196
+- Chen, B. (n.d.). *AAAI2024_CariesXrays* [Data set and code repository]. GitHub. https://github.com/Binz-Chen/AAAI2024_CariesXrays
+- Hamamci, I. E., Er, S., Simsar, E., Yuksel, A. E., Gultekin, S., Ozdemir, S. D., Yang, K., Li, H. B., Pati, S., Stadlinger, B., Mehl, A., Gundogar, M., & Menze, B. (2023). *DENTEX: An abnormal tooth detection with dental enumeration and diagnosis benchmark for panoramic X-rays*. arXiv. https://arxiv.org/abs/2305.19112
+- LUNA0206. (n.d.). *DENTEX* [Data set]. Hugging Face. https://huggingface.co/datasets/LUNA0206/DENTEX
+- Mureșanu, S., Hedeșiu, M., & Iacob, L.-M. (2025). *Dataset for automating dental condition detection on panoramic radiographs* [Data set]. Zenodo. https://doi.org/10.5281/zenodo.15487430
 
-따라서 현재 운영 상정은 다음과 같다.
+### 9.2 모델 및 프레임워크
 
-- 데이터 전처리, 경량 테스트, 추론 API 실행은 로컬에서 수행
-- 본 학습 또는 장시간 실험은 외부 GPU 환경에서 수행 가능
-- 외부 GPU에서 생성한 weight를 로컬로 다운로드해 평가 및 서빙에 사용
+- Django Software Foundation. (n.d.). *Django documentation (Version 4.2)*. https://docs.djangoproject.com/en/4.2/contents/
+- Encode OSS Ltd. (n.d.). *Django REST framework*. https://www.django-rest-framework.org/
+- PyTorch Contributors. (n.d.). *PyTorch documentation*. https://docs.pytorch.org/docs/stable/index.html
+- Tan, M., & Le, Q. (2019). *EfficientNet: Rethinking model scaling for convolutional neural networks*. Proceedings of the 36th International Conference on Machine Learning, 97, 6105-6114. https://proceedings.mlr.press/v97/tan19a.html
+- Ultralytics. (n.d.). *Ultralytics YOLO docs*. https://docs.ultralytics.com/
 
-실무상 반영된 제약:
+### 9.3 배경 자료
 
-- `workers=0` 권장
-- 낮은 VRAM 환경에서는 `--batch 1 --imgsz 320 --no-amp` 조합이 안전
-- `WinError 1455`가 발생하면 Windows page file 확장이 필요
-- TensorBoard는 브라우저 탭 상태에 따라 새로고침이 필요할 수 있으나, 이벤트 파일 기록 자체는 별도로 계속 진행된다
-
-
-## 11) 대표 실행 시나리오
-
-### 11.1 DENTEX만 학습
-
-1. `python scripts/download_dataset.py`
-2. `python scripts/prepare_detection_dataset.py`
-3. `python scripts/train_detection.py --data data/detection/dentex_detection.yaml`
-
-### 11.2 CariesXrays 포함 학습
-
-1. CariesXrays 원본 다운로드 및 압축 해제
-2. `python scripts/prepare_cariesxrays_yolo.py --raw data/raw/cariesxrays --out data/detection_cariesxrays --stem-prefix cx_`
-3. `python scripts/merge_yolo_detection_datasets.py --base data/detection --extra data/detection_cariesxrays --out data/detection_merged`
-4. `python scripts/train_detection.py --data data/detection_merged/merged_detection.yaml`
-
-### 11.3 Hierarchical detection + severity classifier
-
-1. `python scripts/prepare_hierarchical_detection_dataset.py --data data/detection_merged/merged_detection.yaml`
-2. `python scripts/train_detection.py --data data/detection_hierarchical/hierarchical_detection.yaml --no-deep-caries-balance`
-3. `python scripts/prepare_severity_dataset.py`
-4. `python scripts/train_severity_classifier.py`
-
-선택적 semi-supervised 단계:
-
-5. `python scripts/pseudolabel_severity.py --weights artifacts/severity/efficientnet_b0/best.pt --output-csv artifacts/severity/pseudo/train.csv`
-6. `python scripts/train_severity_classifier.py --pseudo-csv artifacts/severity/pseudo/train.csv --output-dir artifacts/severity/efficientnet_b0_pseudo`
-
-### 11.4 TensorBoard 모니터링
-
-1. `python scripts/train_detection.py --name yolov8n_live`
-2. `tensorboard --logdir "%TEMP%\\dental_yolo_tb" --reload_interval 2`
-
-### 11.5 외부 GPU 학습 후 로컬 서빙
-
-1. 로컬에서 데이터셋 전처리 및 YAML 생성
-2. 동일한 프로젝트 또는 산출물 묶음을 외부 GPU 환경으로 전달
-3. 외부 GPU에서 `python scripts/train_detection.py ...` 실행
-4. 필요하면 외부 GPU에서 `python scripts/train_severity_classifier.py ...`도 실행
-5. 학습 완료 후 detection / severity `best.pt`를 각각 로컬 `artifacts/detection/...` 및 `artifacts/severity/...`로 다운로드
-6. 선택한 checkpoint를 `artifacts/detection/serve/best.pt`, `artifacts/severity/serve/best.pt`로 배치하거나 환경변수로 지정
-7. 다운로드한 weight를 Django 추론 API와 평가 스크립트에서 사용
-
-
-## 12) 향후 확장
-
-현재 detection 파이프라인 이후 확장 예정 항목은 다음과 같다.
-
-- 치아 번호 또는 해부학적 위치 정보 결합
-- detection 결과 기반 치료행위 매핑
-- 비용 범위 추정
-- explanation layer 추가
-- active learning 기반 severity relabel loop
-
-주의:
-
-- 본 시스템은 의료 진단 확정 도구가 아니라 보조 의사결정 도구로 다뤄야 한다.
+- Korea Consumer Agency. (2025, December 5). *Dental treatment cost disputes are rapidly increasing; provision of treatment cost plans needs to be activated*. https://www.kca.go.kr/home/sub.do?menukey=4005&mode=view&no=1003974692
