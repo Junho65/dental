@@ -1,0 +1,47 @@
+{
+  "dataset_yaml": "C:\\Users\\junho\\Desktop\\4학년 1학기\\딥러닝실습\\dental\\data\\detection_merged_umfih\\merged_detection.yaml",
+  "dataset_root": "C:\\Users\\junho\\Desktop\\4학년 1학기\\딥러닝실습\\dental\\data\\detection_merged_umfih",
+  "source_split": "train",
+  "source_class_names": [
+    "caries",
+    "deep_caries",
+    "periapical_lesion",
+    "impacted_tooth"
+  ],
+  "class_names": [
+    "caries_family",
+    "periapical_lesion",
+    "impacted_tooth"
+  ],
+  "applied_remap": {
+    "caries": "caries_family",
+    "deep_caries": "caries_family",
+    "periapical_lesion": "periapical_lesion",
+    "impacted_tooth": "impacted_tooth"
+  },
+  "metric_definition": {
+    "frequency_label": "Number of annotations for each label.",
+    "relative_frequency_percent": "Frequency(Label) divided by total annotations in the same scope, multiplied by 100."
+  },
+  "scope": {
+    "image_count": 5405,
+    "annotation_count": 15121,
+    "rows": [
+      {
+        "label": "caries_family",
+        "frequency_label": 13052,
+        "relative_frequency_percent": 86.317
+      },
+      {
+        "label": "periapical_lesion",
+        "frequency_label": 1090,
+        "relative_frequency_percent": 7.2085
+      },
+      {
+        "label": "impacted_tooth",
+        "frequency_label": 979,
+        "relative_frequency_percent": 6.4744
+      }
+    ]
+  }
+}

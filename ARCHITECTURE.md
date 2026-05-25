@@ -60,7 +60,9 @@ graph TD
 
     subgraph serve["Serving"]
         yolo["YOLO Detector"]
+        crop["ROI Crop"]
         cls["Severity Classifier"]
+        refine["Severity Refinement"]
         cost["Cost Estimation Module"]
         rule["Dental Expert Rule Base"]
         api["Django /predict/ API"]
@@ -83,8 +85,12 @@ graph TD
     sevtrain -->|"severity classifier checkpoint"| cls
     user -->|"panoramic X-ray upload"| web
     web -->|"multipart image request"| api
+    api -->|"image tensor"| yolo
     yolo -->|"bbox + coarse lesion class"| api
-    cls -->|"caries vs deep_caries refinement"| api
+    api -->|"caries_family ROI only"| crop
+    crop -->|"cropped lesion tensor"| cls
+    cls -->|"caries vs deep_caries score"| refine
+    refine -->|"refined label merge"| api
     api -.->|"planned lesion summary"| cost
     rule -.->|"treatment and fee heuristics"| cost
     cost -.->|"estimated treatment options + fee range"| api
@@ -137,6 +143,9 @@ hierarchical detection 데이터가 준비되지 않은 경우에는 merged dete
 - 프로젝트 내 역할:
   - detection supervised training source
   - severity crop supervised source
+- annotation 처리 방식:
+  - validation split은 JSON에 포함된 bbox를 그대로 사용해 YOLO bbox로 정규화한다.
+  - test split은 polygon 형태의 `points`를 읽고, 각 점의 `x/y` 최솟값과 최댓값으로 축 정렬 외접 bbox를 만든 뒤 YOLO bbox로 변환한다.
 
 사용 클래스:
 
@@ -152,6 +161,9 @@ hierarchical detection 데이터가 준비되지 않은 경우에는 merged dete
 - 프로젝트 내 역할:
   - detection에서 충치 계열 표본 확장
   - severity pseudo-label 후보 crop source
+- annotation 처리 방식:
+  - VOC XML의 `object/bndbox`를 읽어 YOLO bbox로 변환한다.
+  - 공개 라벨 중 충치 계열로 안전하게 해석되는 `Decay`만 사용하고 다른 클래스는 학습 라벨에서 제외한다.
 
 프로젝트 매핑:
 
@@ -164,6 +176,9 @@ hierarchical detection 데이터가 준비되지 않은 경우에는 merged dete
 - 프로젝트 내 역할:
   - detection 데이터 다양성 확장
   - `periapical_lesion`, `impacted_tooth`, 일부 `caries` 보강
+- annotation 처리 방식:
+  - 원본 YOLO annotation을 그대로 읽되, 프로젝트 클래스 체계와 직접 정렬되는 클래스만 유지한다.
+  - 유지 대상 클래스의 class id를 프로젝트 4-class 순서에 맞게 remap한다.
 
 프로젝트 매핑:
 
@@ -213,6 +228,23 @@ Detection 데이터 전처리 단계는 다음과 같다.
 3. UMFIH YOLO annotation을 프로젝트 4-class 체계로 remap
 4. 여러 detection 데이터셋을 하나의 merged dataset으로 병합
 5. 필요 시 train 이미지 oversampling manifest 생성
+
+구현 수준에서의 주요 변환 규칙은 다음과 같다.
+
+- DENTEX validation:
+  - JSON annotation에 포함된 bbox를 사용한다.
+  - bbox를 `(x_center, y_center, width, height)` 형태의 YOLO 정규화 좌표로 변환한다.
+- DENTEX test:
+  - 각 lesion shape의 polygon `points`를 읽는다.
+  - `x_min`, `x_max`, `y_min`, `y_max`를 계산해 축 정렬 외접 bbox를 만든다.
+  - 생성된 bbox를 YOLO 정규화 좌표로 변환한다.
+- 클래스명 매핑:
+  - DENTEX 문자열 라벨은 규칙 기반으로 `caries`, `deep_caries`, `periapical_lesion`, `impacted_tooth` 중 하나로 매핑한다.
+  - CariesXrays는 VOC `Decay`를 `caries`로 매핑한다.
+  - UMFIH는 `Carious lesion`, `Apical periodontitis`, `Impacted tooth`만 유지하고 각각 `caries`, `periapical_lesion`, `impacted_tooth`로 remap한다.
+- 최종 출력 형식:
+  - 모든 detection 데이터셋은 `images/{train,val,test}`와 `labels/{train,val,test}` 구조를 갖는 Ultralytics YOLO 형식으로 통일한다.
+  - 각 label 파일은 `class_id x_center y_center width height` 한 줄당 한 객체 형식을 사용한다.
 
 이 단계의 세부 실행 순서와 사용 명령은 별도 실행 가이드 문서에서 관리한다.
 
@@ -265,9 +297,11 @@ Severity 데이터셋은 DENTEX lesion annotation을 crop으로 잘라 분류 �
 
 ### 5.2 Severity 분류 모델
 
-충치 세부 단계 분류는 EfficientNet-B0 기반 classifier를 사용한다.
+충치 세부 단계 분류는 TorchXRayVision DenseNet121 기반 classifier를 사용한다.
 
-- 기본 모델명: `efficientnet_b0`
+- 기본 모델명: `xrv_densenet121`
+- 기본 pretrained weights: `densenet121-res224-all`
+- fine-tuning 방식: pretrained backbone freeze + classifier head만 학습하는 head-only fine-tuning
 - 입력 크기 기본값: `224`
 - 출력 클래스:
   - `caries`
@@ -275,7 +309,9 @@ Severity 데이터셋은 DENTEX lesion annotation을 crop으로 잘라 분류 �
 
 선택 이유:
 
-- lesion crop 분류에 적합한 경량 CNN
+- chest X-ray pretrained backbone을 사용해 ImageNet 대비 의료영상 도메인 편차를 줄일 수 있음
+- 학습 데이터가 매우 작아 pretrained 표현을 최대한 보존하는 보수적 fine-tuning 전략이 필요함
+- lesion crop 분류에 적합한 비교적 경량 CNN
 - 로컬 GPU에서 학습 가능한 크기
 - pseudo-label 재학습 루프와 결합하기 쉬움
 

@@ -1,0 +1,328 @@
+{
+  "metadata": {
+    "description": "Table-ready hyperparameter summary for the current project defaults.",
+    "column_schema": [
+      "Category",
+      "Parameter",
+      "Value/Description"
+    ],
+    "sources": {
+      "detection_script_defaults": [
+        "scripts/train_detection.py",
+        "README.md",
+        "ARCHITECTURE.md"
+      ],
+      "detection_recorded_args": [
+        "runs/detect/artifacts/detection/yolov8n_hierarchical_img416_e30_w0/args.yaml"
+      ],
+      "severity_script_defaults": [
+        "scripts/train_severity_classifier.py",
+        "src/severity/dataset.py"
+      ],
+      "severity_recorded_metrics": [
+        "artifacts/severity/efficientnet_b0_seed42_es/metrics.json"
+      ]
+    }
+  },
+  "tables": {
+    "detection_training_default": [
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Task",
+        "Value/Description": "Object detection on hierarchical 3-class dataset (`caries_family`, `periapical_lesion`, `impacted_tooth`)."
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Dataset YAML",
+        "Value/Description": "Default script target is `data/detection_hierarchical/hierarchical_detection.yaml`."
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Model",
+        "Value/Description": "`yolov8n.pt` (Ultralytics YOLOv8n pretrained checkpoint)."
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Input Image Size",
+        "Value/Description": "416 x 416 pixels (current project default)."
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Batch Size",
+        "Value/Description": "16"
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Workers",
+        "Value/Description": "4 DataLoader workers in current script default."
+      },
+      {
+        "Category": "Training Regimen",
+        "Parameter": "Number of Epochs",
+        "Value/Description": "50 epochs in current script default."
+      },
+      {
+        "Category": "Training Regimen",
+        "Parameter": "Early Stopping Patience",
+        "Value/Description": "10 epochs without Ultralytics fitness improvement."
+      },
+      {
+        "Category": "Training Regimen",
+        "Parameter": "AMP",
+        "Value/Description": "Enabled by default (`--amp`)."
+      },
+      {
+        "Category": "Training Regimen",
+        "Parameter": "Device",
+        "Value/Description": "Default training device is `0` (first CUDA device) in the script."
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Optimizer",
+        "Value/Description": "`auto` (Ultralytics automatic optimizer selection). Recorded run config also stores `optimizer: auto`."
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Initial Learning Rate (lr0)",
+        "Value/Description": "0.01"
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Final LR Factor (lrf)",
+        "Value/Description": "0.01"
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Momentum",
+        "Value/Description": "0.937"
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Weight Decay",
+        "Value/Description": "0.0005"
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Warmup Epochs",
+        "Value/Description": "3.0"
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Warmup Momentum",
+        "Value/Description": "0.8"
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Warmup Bias LR",
+        "Value/Description": "0.1"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "HSV Augmentation",
+        "Value/Description": "hsv_h=0.015, hsv_s=0.7, hsv_v=0.4"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "Translation",
+        "Value/Description": "0.1"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "Scale",
+        "Value/Description": "0.5"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "Horizontal Flip",
+        "Value/Description": "fliplr=0.5"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "Mosaic",
+        "Value/Description": "1.0"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "MixUp",
+        "Value/Description": "0.0"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "CutMix",
+        "Value/Description": "0.0"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "Close Mosaic",
+        "Value/Description": "10 final epochs without mosaic."
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Box Loss Weight",
+        "Value/Description": "7.5"
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Class Loss Weight",
+        "Value/Description": "0.5"
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "DFL Weight",
+        "Value/Description": "1.5"
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Validation IoU Threshold",
+        "Value/Description": "0.7 in recorded Ultralytics args."
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Primary Detection Metrics",
+        "Value/Description": "`precision`, `recall`, `mAP50`, `mAP50-95`; project documentation treats `mAP50-95` as the key metric."
+      }
+    ],
+    "severity_training_default": [
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Task",
+        "Value/Description": "Binary severity classification on lesion crops (`caries` vs `deep_caries`)."
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Training CSV",
+        "Value/Description": "Default labeled training split: `data/severity/train.csv`."
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Validation CSV",
+        "Value/Description": "Default labeled validation split: `data/severity/val.csv`."
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Model",
+        "Value/Description": "`efficientnet_b0`"
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Input Image Size",
+        "Value/Description": "224 x 224 pixels"
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Batch Size",
+        "Value/Description": "8"
+      },
+      {
+        "Category": "Training Regimen",
+        "Parameter": "Number of Epochs",
+        "Value/Description": "12 epochs by default"
+      },
+      {
+        "Category": "Training Regimen",
+        "Parameter": "Seed",
+        "Value/Description": "42"
+      },
+      {
+        "Category": "Training Regimen",
+        "Parameter": "Pseudo-label Usage",
+        "Value/Description": "Disabled by default (`--pseudo-csv=None`). Current recorded metrics show `used_pseudo_labels: false`."
+      },
+      {
+        "Category": "Training Regimen",
+        "Parameter": "Pseudo-label Weight Scale",
+        "Value/Description": "0.5 if pseudo labels are used."
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Optimizer",
+        "Value/Description": "AdamW"
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Initial Learning Rate",
+        "Value/Description": "0.0002"
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Weight Decay",
+        "Value/Description": "0.0001"
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Learning Rate Scheduler",
+        "Value/Description": "ReduceLROnPlateau"
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Scheduler Patience",
+        "Value/Description": "4"
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Scheduler Factor",
+        "Value/Description": "0.5"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "Resize",
+        "Value/Description": "Resize to 224 x 224"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "Random Horizontal Flip",
+        "Value/Description": "Applied with probability 0.5 during training."
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "Random Rotation",
+        "Value/Description": "degrees=8"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "Color Jitter",
+        "Value/Description": "brightness=0.12, contrast=0.12"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "Normalization",
+        "Value/Description": "ImageNet mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)"
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Loss Function",
+        "Value/Description": "Weighted CrossEntropyLoss with per-sample weighting (`reduction='none'` then weighted mean)."
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Class Weights",
+        "Value/Description": "Computed from training label counts as inverse-frequency style weights."
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Best Checkpoint Metric",
+        "Value/Description": "Default script setting: `val_loss`"
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Early Stopping Metric",
+        "Value/Description": "Default script setting: `val_loss`"
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Early Stopping Patience",
+        "Value/Description": "10"
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Early Stopping Min Delta",
+        "Value/Description": "0.001"
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Primary Evaluation Metrics",
+        "Value/Description": "`val_loss`, `accuracy`, `macro F1`"
+      }
+    ]
+  }
+}

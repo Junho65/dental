@@ -1,0 +1,76 @@
+{
+  "class_names": [
+    "caries",
+    "deep_caries"
+  ],
+  "label_column": "label",
+  "metric_definition": {
+    "frequency_label": "Number of samples for each label.",
+    "relative_frequency_percent": "Frequency(Label) divided by total samples in the same scope, multiplied by 100."
+  },
+  "overall": {
+    "sample_count": 133,
+    "rows": [
+      {
+        "label": "caries",
+        "frequency_label": 101,
+        "relative_frequency_percent": 75.9398
+      },
+      {
+        "label": "deep_caries",
+        "frequency_label": 32,
+        "relative_frequency_percent": 24.0602
+      }
+    ]
+  },
+  "splits": {
+    "train": {
+      "csv_path": "C:\\Users\\junho\\Desktop\\4학년 1학기\\딥러닝실습\\dental\\data\\severity\\train.csv",
+      "sample_count": 93,
+      "rows": [
+        {
+          "label": "caries",
+          "frequency_label": 71,
+          "relative_frequency_percent": 76.3441
+        },
+        {
+          "label": "deep_caries",
+          "frequency_label": 22,
+          "relative_frequency_percent": 23.6559
+        }
+      ]
+    },
+    "val": {
+      "csv_path": "C:\\Users\\junho\\Desktop\\4학년 1학기\\딥러닝실습\\dental\\data\\severity\\val.csv",
+      "sample_count": 13,
+      "rows": [
+        {
+          "label": "caries",
+          "frequency_label": 10,
+          "relative_frequency_percent": 76.9231
+        },
+        {
+          "label": "deep_caries",
+          "frequency_label": 3,
+          "relative_frequency_percent": 23.0769
+        }
+      ]
+    },
+    "test": {
+      "csv_path": "C:\\Users\\junho\\Desktop\\4학년 1학기\\딥러닝실습\\dental\\data\\severity\\test.csv",
+      "sample_count": 27,
+      "rows": [
+        {
+          "label": "caries",
+          "frequency_label": 20,
+          "relative_frequency_percent": 74.0741
+        },
+        {
+          "label": "deep_caries",
+          "frequency_label": 7,
+          "relative_frequency_percent": 25.9259
+        }
+      ]
+    }
+  }
+}

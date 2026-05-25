@@ -5,8 +5,8 @@ from pathlib import Path
 import torch
 from PIL import Image
 
-from .dataset import SEVERITY_CLASS_NAMES, build_transforms
-from .model import build_severity_model
+from .dataset import DEFAULT_SEVERITY_MODEL_NAME, SEVERITY_CLASS_NAMES, build_transforms
+from .model import DEFAULT_XRV_WEIGHTS, build_severity_model
 
 
 class SeverityPredictor:
@@ -16,14 +16,20 @@ class SeverityPredictor:
 
         self.class_names = checkpoint.get("class_names", SEVERITY_CLASS_NAMES)
         self.img_size = int(checkpoint.get("img_size", 224))
-        self.model_name = checkpoint.get("model_name", "efficientnet_b0")
+        self.model_name = checkpoint.get("model_name", DEFAULT_SEVERITY_MODEL_NAME)
+        self.xrv_weights = checkpoint.get("xrv_weights", DEFAULT_XRV_WEIGHTS)
         self.device = device
-        self.transforms = build_transforms(img_size=self.img_size, train=False)
+        self.transforms = build_transforms(
+            img_size=self.img_size,
+            train=False,
+            model_name=self.model_name,
+        )
 
         self.model = build_severity_model(
             model_name=self.model_name,
             num_classes=len(self.class_names),
             pretrained=False,
+            xrv_weights=self.xrv_weights,
         )
         self.model.load_state_dict(checkpoint["state_dict"])
         self.model.to(self.device)

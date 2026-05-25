@@ -16,7 +16,12 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src.severity.dataset import SEVERITY_CLASS_NAMES, SeverityCropDataset
-from src.severity.model import build_severity_model
+from src.severity.model import (
+    configure_head_only_finetuning,
+    DEFAULT_SEVERITY_MODEL_NAME,
+    DEFAULT_XRV_WEIGHTS,
+    build_severity_model,
+)
 
 
 def _load_labeled_csv(csv_path: Path) -> pd.DataFrame:
@@ -146,8 +151,18 @@ def _train_single_run(
     val_csv = _save_dataframe(val_df, output_dir / "val_fold.csv")
     class_weights = _build_class_weights(train_df)
 
-    train_ds = SeverityCropDataset(train_csv, train=True, img_size=args.img_size)
-    val_ds = SeverityCropDataset(val_csv, train=False, img_size=args.img_size)
+    train_ds = SeverityCropDataset(
+        train_csv,
+        train=True,
+        img_size=args.img_size,
+        model_name=args.model_name,
+    )
+    val_ds = SeverityCropDataset(
+        val_csv,
+        train=False,
+        img_size=args.img_size,
+        model_name=args.model_name,
+    )
     loader_generator = torch.Generator().manual_seed(seed)
     train_loader = DataLoader(
         train_ds,
@@ -162,9 +177,16 @@ def _train_single_run(
         model_name=args.model_name,
         num_classes=len(SEVERITY_CLASS_NAMES),
         pretrained=True,
+        xrv_weights=args.xrv_weights,
     ).to(device)
+    classifier_head = configure_head_only_finetuning(args.model_name, model)
+    trainable_params = [param for param in model.parameters() if param.requires_grad]
+    print(
+        f"Fine-tuning mode: head_only "
+        f"(trainable_params={sum(param.numel() for param in trainable_params)})"
+    )
     criterion = nn.CrossEntropyLoss(weight=class_weights.to(device), reduction="none")
-    optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
+    optimizer = AdamW(trainable_params, lr=args.lr, weight_decay=1e-4)
     scheduler = ReduceLROnPlateau(
         optimizer,
         mode=_metric_mode(args.selection_metric),
@@ -206,6 +228,8 @@ def _train_single_run(
             "epoch": epoch,
             "state_dict": model.state_dict(),
             "model_name": args.model_name,
+            "xrv_weights": args.xrv_weights,
+            "fine_tuning_mode": "head_only",
             "img_size": args.img_size,
             "class_names": SEVERITY_CLASS_NAMES,
             "val_loss": val_loss,
@@ -265,6 +289,8 @@ def _train_single_run(
         "train_class_counts": train_df["label"].value_counts().to_dict(),
         "val_class_counts": val_df["label"].value_counts().to_dict(),
         "used_pseudo_labels": bool(args.pseudo_csv),
+        "fine_tuning_mode": "head_only",
+        "trainable_parameter_count": sum(param.numel() for param in trainable_params),
         "stopped_early": stopped_early,
         "epochs_completed": len(history),
         "history": history,
@@ -278,8 +304,9 @@ def main() -> None:
     parser.add_argument("--train-csv", type=Path, default=Path("data/severity/train.csv"))
     parser.add_argument("--val-csv", type=Path, default=Path("data/severity/val.csv"))
     parser.add_argument("--pseudo-csv", type=Path, default=None)
-    parser.add_argument("--output-dir", type=Path, default=Path("artifacts/severity/efficientnet_b0"))
-    parser.add_argument("--model-name", default="efficientnet_b0")
+    parser.add_argument("--output-dir", type=Path, default=Path("artifacts/severity/xrv_densenet121"))
+    parser.add_argument("--model-name", default=DEFAULT_SEVERITY_MODEL_NAME)
+    parser.add_argument("--xrv-weights", default=DEFAULT_XRV_WEIGHTS)
     parser.add_argument("--img-size", type=int, default=224)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--epochs", type=int, default=12)

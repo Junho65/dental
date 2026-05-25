@@ -269,11 +269,14 @@ Train the severity classifier on labeled DENTEX crops:
 python scripts/train_severity_classifier.py
 ```
 
+The default severity backbone is `TorchXRayVision DenseNet121` with
+`densenet121-res224-all` chest X-ray pretrained weights.
+
 Generate high-confidence pseudo-labels from CariesXrays lesion crops, then retrain with them:
 
 ```bash
-python scripts/pseudolabel_severity.py --weights artifacts/severity/efficientnet_b0/best.pt --output-csv artifacts/severity/pseudo/train.csv
-python scripts/train_severity_classifier.py --pseudo-csv artifacts/severity/pseudo/train.csv --output-dir artifacts/severity/efficientnet_b0_pseudo
+python scripts/pseudolabel_severity.py --weights artifacts/severity/xrv_densenet121/best.pt --output-csv artifacts/severity/pseudo/train.csv
+python scripts/train_severity_classifier.py --pseudo-csv artifacts/severity/pseudo/train.csv --output-dir artifacts/severity/xrv_densenet121_pseudo
 ```
 
 For Django serving, place the selected severity checkpoint at:
