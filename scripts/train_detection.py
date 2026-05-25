@@ -141,7 +141,11 @@ def build_balanced_training_data(data_path: Path, target_class_name: str) -> Pat
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", default="data/detection_hierarchical/hierarchical_detection.yaml")
-    parser.add_argument("--model", default="yolov8n.pt")
+    parser.add_argument(
+        "--model",
+        default="yolov8s.pt",
+        help="Model config or checkpoint. Defaults to COCO-pretrained yolov8s.pt for dental fine-tuning.",
+    )
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument(
         "--patience",
@@ -150,9 +154,14 @@ def main():
         help="Early stopping: epochs with no fitness improvement before stopping (Ultralytics).",
     )
     parser.add_argument("--imgsz", type=int, default=416)
-    parser.add_argument("--batch", type=int, default=16)
+    parser.add_argument(
+        "--batch",
+        type=int,
+        default=8,
+        help="Training batch size. GTX 1660 6GB default is 8; if CUDA OOM occurs, retry with 4 then 2.",
+    )
     parser.add_argument("--project", default="artifacts/detection")
-    parser.add_argument("--name", default="yolov8n_hierarchical")
+    parser.add_argument("--name", default="yolov8s_hierarchical")
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--device", default="0")
     parser.add_argument(
@@ -258,6 +267,7 @@ def main():
         device=args.device,
         amp=args.amp,
         plots=args.plots,
+        pretrained=True,
     )
     try:
         model.train(**train_kw)

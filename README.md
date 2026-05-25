@@ -3,7 +3,7 @@
 This project follows your local-first plan:
 - download/prepare DENTEX-style data
 - convert to object-detection labels (YOLO format)
-- train a PyTorch detection model (YOLOv8)
+- train a PyTorch detection model (YOLOv8/YOLO11)
 - evaluate and save detection weights
 - serve inference with Django
 
@@ -181,14 +181,15 @@ python train_detection.py
 ```
 
 Weights output:
-- `artifacts/detection/yolov8n_dentex/weights/best.pt`
+- `artifacts/detection/yolov8s_hierarchical/weights/best.pt`
 
 Current training defaults:
 - `epochs=50`
 - `imgsz=416`
-- `batch=16`
+- `batch=8` on GTX 1660 6GB; if CUDA OOM occurs, retry with `batch=4`, then `batch=2`
 - `workers=4`
 - default dataset: `data/detection_hierarchical/hierarchical_detection.yaml`
+- default model init: `yolov8s.pt` with `pretrained=True` (COCO pretrained fine-tuning)
 - `deep_caries` train-image oversampling disabled by default
 - TensorBoard scalar logging enabled
 
@@ -200,16 +201,36 @@ python train_detection.py
 
 The root command already defaults to:
 - `data=data/detection_hierarchical/hierarchical_detection.yaml`
+- `model=yolov8s.pt`
 - `imgsz=416`
-- `batch=16`
+- `batch=8`
 - `workers=4`
 
 Use extra flags only when you want to override the defaults:
 
 ```bash
-python train_detection.py --name yolov8n_experiment
-python train_detection.py --batch 8 --no-amp
+python train_detection.py --name yolov8s_experiment
+python train_detection.py --batch 4
 ```
+
+Recommended model comparison on GTX 1660 6GB:
+
+```bash
+python train_detection.py --model yolov8n.pt --name yolov8n_hierarchical_baseline --batch 16 --imgsz 416
+python train_detection.py --model yolov8s.pt --name yolov8s_hierarchical --batch 8 --imgsz 416
+python train_detection.py --model yolo11s.pt --name yolo11s_hierarchical --batch 8 --imgsz 416
+```
+
+Run a 1-epoch smoke test before full training when trying a new model:
+
+```bash
+python train_detection.py --model yolov8s.pt --name yolov8s_smoke --epochs 1 --batch 8 --imgsz 416
+python train_detection.py --model yolo11s.pt --name yolo11s_smoke --epochs 1 --batch 8 --imgsz 416
+```
+
+The decision metric is `metrics/mAP50-95(B)` in each run's `results.csv`. The existing `yolov8n_hierarchical2` reference is about `0.126` at epoch 10 and about `0.173` final, so a larger model should beat both the early and final reference before replacing `artifacts/detection/serve/best.pt`.
+
+Model-size rationale: Ultralytics' official YOLOv8 table lists `YOLOv8s` as larger than `YOLOv8n` in params/FLOPs, while the official YOLO11 table lists `YOLO11s` as a lighter latest-family small candidate than `YOLOv8s`. See the Ultralytics docs for [YOLOv8](https://docs.ultralytics.com/models/yolov8/) and [YOLO11](https://docs.ultralytics.com/models/yolo11/).
 
 If you want to oversample a different class or train on a hierarchical dataset that no longer has
 `deep_caries` as a standalone class:
@@ -265,7 +286,7 @@ Or set:
 TensorBoard while training:
 
 ```bash
-python train_detection.py --name yolov8n_live
+python train_detection.py --name yolov8s_live
 tensorboard --logdir "$env:TEMP\dental_yolo_tb" --reload_interval 2
 ```
 
@@ -274,20 +295,20 @@ Open `http://localhost:6006/` and select the run folder matching `--name`.
 If you want to mirror `results.csv` into a separate live TensorBoard log while a run is in progress:
 
 ```bash
-python scripts/watch_results_csv_tensorboard.py --run-name yolov8n_live
+python scripts/watch_results_csv_tensorboard.py --run-name yolov8s_live
 tensorboard --logdir "$env:TEMP\dental_tensorboard_live" --reload_interval 2
 ```
 
 If a past run has only `results.csv` and no event files, backfill TensorBoard logs from it:
 
 ```bash
-python scripts/log_results_csv_to_tensorboard.py runs/detect/artifacts/detection/yolov8n_live/results.csv
+python scripts/log_results_csv_to_tensorboard.py runs/detect/artifacts/detection/yolov8s_live/results.csv
 ```
 
 ## 4) Evaluate
 
 ```bash
-python scripts/eval_detection.py --weights artifacts/detection/yolov8n_dentex/weights/best.pt
+python scripts/eval_detection.py --weights artifacts/detection/yolov8s_hierarchical/weights/best.pt --data data/detection_hierarchical/hierarchical_detection.yaml --imgsz 416
 ```
 
 Metrics output:

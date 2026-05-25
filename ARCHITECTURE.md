@@ -117,10 +117,11 @@ graph LR
 
 - 기본 학습 흐름: hierarchical detection training
 - 기본 detection 데이터 구성: merged detection dataset에서 파생된 hierarchical dataset
-- 기본 detection backbone: YOLOv8n
+- 기본 detection backbone: YOLOv8s
+- 기본 초기화 방식: `yolov8s.pt` COCO pretrained checkpoint에서 시작하는 fine-tuning (`pretrained=True`)
 - 기본 epoch: `50`
 - 기본 해상도: `imgsz=416`
-- 기본 배치 크기: `batch=16`
+- 기본 배치 크기: `batch=8` (GTX 1660 6GB 기준, OOM 시 `4`, `2` 순서로 축소)
 - 기본 DataLoader workers: `workers=4`
 - 기본 early stopping patience: `10`
 
@@ -250,15 +251,17 @@ Severity 데이터셋은 DENTEX lesion annotation을 crop으로 잘라 분류 �
 
 ### 5.1 Detection 모델
 
-기본 detection 모델은 Ultralytics YOLOv8n이다.
+기본 detection 모델은 Ultralytics YOLOv8s이다.
 
 - 현재 기본 task: hierarchical 3-class detection
+- 현재 기본 초기화: 치과 X-ray 전용 공개 detection pretrained checkpoint는 사용하지 않고, COCO pretrained `yolov8s.pt`를 dental dataset에 fine-tuning
 
 선택 이유:
 
-- 경량 모델로 로컬 GPU에서도 실험 가능
-- bbox detection 성능과 속도의 균형이 좋음
+- `YOLOv8n`보다 params/FLOPs가 커서 더 높은 표현력을 기대할 수 있음
+- GTX 1660 6GB에서 `imgsz=416`, `batch=8` 기준으로 실험 가능한 크기
 - Ultralytics 생태계를 이용해 학습, 검증, 체크포인트 관리가 단순함
+- 비교 후보로 `YOLO11s`를 같은 데이터와 해상도에서 평가한다. Ultralytics 공식 수치 기준 `YOLO11s`는 `YOLOv8s`보다 가벼운 최신 small 계열 후보이며, `YOLOv8m` 이상은 6GB VRAM에서 OOM 및 학습 시간 리스크가 커 기본 후보에서 제외한다.
 
 ### 5.2 Severity 분류 모델
 
@@ -435,6 +438,8 @@ Detection 학습은 TensorBoard와 `results.csv`를 통해 모니터링한다.
 - PyTorch Contributors. (n.d.). *PyTorch documentation*. https://docs.pytorch.org/docs/stable/index.html
 - Tan, M., & Le, Q. (2019). *EfficientNet: Rethinking model scaling for convolutional neural networks*. Proceedings of the 36th International Conference on Machine Learning, 97, 6105-6114. https://proceedings.mlr.press/v97/tan19a.html
 - Ultralytics. (n.d.). *Ultralytics YOLO docs*. https://docs.ultralytics.com/
+- Ultralytics. (n.d.). *YOLOv8 model documentation*. https://docs.ultralytics.com/models/yolov8/
+- Ultralytics. (n.d.). *YOLO11 model documentation*. https://docs.ultralytics.com/models/yolo11/
 
 ### 9.3 배경 자료
 
