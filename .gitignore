@@ -9,3 +9,4 @@ __pycache__/
 # Notebook/runtime-local files
 .ipynb_checkpoints/
 db.sqlite3
+.torchxrayvision/
