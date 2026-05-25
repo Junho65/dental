@@ -382,7 +382,36 @@ Severity 분류기는 다음 지표를 사용한다.
 - class balancing on/off
 - pseudo-label severity classifier 사용 여부
 
-### 6.5 기록 및 모니터링
+### 6.5 최근 Detection 학습 결과
+
+가장 최근에 완료된 detection 학습은 `yolov8s_hierarchical_e102_continue40`이다.
+
+- 완료 시각: 2026-05-26 00:27 KST
+- 학습 방식: 기존 `yolov8s_hierarchical_e102`의 `last.pt`에서 40 epochs 추가 학습
+- 모델: YOLOv8s hierarchical 3-class detection
+- 데이터: `data/detection_hierarchical/hierarchical_detection.yaml`
+- 해상도 / 배치: `imgsz=416`, `batch=8`
+- 장비: NVIDIA GeForce GTX 1660 6GB
+- 검증 데이터: 745 images, 2085 instances
+- best checkpoint: `runs/detect/artifacts/detection/yolov8s_hierarchical_e102_continue40/weights/best.pt`
+
+Best checkpoint 기준 validation 결과:
+
+| class | images | instances | precision | recall | mAP50 | mAP50-95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| all | 745 | 2085 | 0.497 | 0.439 | 0.406 | 0.188 |
+| caries_family | 731 | 1821 | 0.433 | 0.430 | 0.352 | 0.147 |
+| periapical_lesion | 53 | 117 | 0.374 | 0.154 | 0.149 | 0.046 |
+| impacted_tooth | 59 | 147 | 0.683 | 0.735 | 0.717 | 0.370 |
+
+이전 기준선 `yolov8s_hierarchical_e102` 마지막 epoch와 비교하면 전체 mAP50은 `0.345`에서 `0.406`으로,
+mAP50-95는 `0.153`에서 `0.188`로 개선되었다. 반면 precision은 `0.537`에서 `0.497`로 낮아지고,
+recall은 `0.375`에서 `0.439`로 상승하여, 추가 학습 후 모델이 더 많은 병변 후보를 검출하는 방향으로 이동했다.
+
+클래스별로는 `impacted_tooth` 성능이 가장 높고, `periapical_lesion`은 recall과 mAP가 낮아 추가 데이터 보강,
+라벨 품질 점검, class balancing 또는 loss/augmentation 조정이 필요한 우선 개선 대상이다.
+
+### 6.6 기록 및 모니터링
 
 Detection 학습은 TensorBoard와 `results.csv`를 통해 모니터링한다.
 
