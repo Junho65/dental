@@ -21,6 +21,7 @@
 
 - 1단계 detection: `caries_family`, `periapical_lesion`, `impacted_tooth`
 - 2단계 severity classification: `caries` vs `deep_caries`
+- 확장 후보 detection: Roboflow 공개 데이터 기반 `bone_loss`, `cyst`, `retained_root` 추가 실험
 - 서비스 형태: Django 기반 웹서비스, 프런트엔드 업로드 화면과 `/predict/` API를 함께 제공
 - 사용자 흐름: 사용자가 웹 화면에서 파노라마 X-ray 이미지를 업로드하면 백엔드 모델이 추론을 수행
 - 향후 확장: 병변 유형별 치료 옵션과 적정 진료비 범위 제시 모듈 추가
@@ -217,6 +218,36 @@ hierarchical detection 데이터가 준비되지 않은 경우에는 merged dete
 
 추가로 CariesXrays lesion crop은 unlabeled pool로 저장한 뒤 pseudo-labeling에 사용할 수 있다.
 
+### 3.6 Roboflow 확장 후보 데이터셋
+
+지원 병변 범위를 넓히기 위해 Roboflow Universe의 공개 dental X-ray 데이터셋을 확장 후보로 검토한다. 1차 확장
+실험에서는 기존 3-class detection에 다음 클래스를 추가하는 것을 목표로 한다.
+
+- `bone_loss`
+- `cyst`
+- `retained_root`
+
+1차 확장 후 detection taxonomy는 다음 6-class 체계를 사용한다.
+
+- `caries_family`
+- `periapical_lesion`
+- `impacted_tooth`
+- `bone_loss`
+- `cyst`
+- `retained_root`
+
+Roboflow 원본 클래스는 프로젝트 표준 클래스명으로 remap한다.
+
+- `Caries`, `cavity`, `decay` -> `caries_family`
+- `Periapical lesion` -> `periapical_lesion`
+- `impacted tooth` -> `impacted_tooth`
+- `Bone Loss` -> `bone_loss`
+- `Cyst` -> `cyst`
+- `Retained root`, `Root Piece` -> `retained_root`
+
+`Crown`, `Implant`, `Filling`, `Root canal filling`, `Amalgam filling`, `Composite filling` 등은 병변이라기보다
+치료/보철 소견에 가까우므로 v1 확장 학습에서는 제외하고, 향후 별도 treatment/restoration finding 그룹으로 분리한다.
+
 ## 4. 데이터 전처리
 
 ### 4.1 Detection 전처리
@@ -278,6 +309,33 @@ Severity 데이터셋은 DENTEX lesion annotation을 crop으로 잘라 분류 �
 - detection 이미지 단위 multi-label stratified split 도입
 - 희소 클래스(`deep_caries`, `impacted_tooth`) 분포 안정화
 - train/val/test 간 클래스 불균형 완화
+
+### 4.5 Roboflow 중복 이미지 검사
+
+Roboflow 데이터는 기존 DENTEX, CariesXrays, UMFIH 이미지와 겹칠 수 있으므로, 병합 전에 이미지 내용 기반 중복
+검사를 수행한다. 파일명은 Roboflow export 과정에서 바뀔 수 있으므로 중복 판정 기준으로 사용하지 않는다.
+
+중복 검사는 `scripts/audit_roboflow_duplicates.py`에서 수행한다.
+
+- exact duplicate:
+  - 이미지 파일 bytes 기준 `SHA256`이 동일하면 중복 확정
+- near duplicate:
+  - 이미지를 정규화한 뒤 직접 구현한 `dHash`를 계산
+  - Hamming distance `<= 4`이면 중복 확정
+  - Hamming distance `5..8`이면 의심 중복으로 기록하되, 첫 실험에서는 보수적으로 제외
+- 기존 `val` 또는 `test`와 겹치는 Roboflow 이미지는 데이터 누수를 막기 위해 무조건 제외
+- 기존 `train`과 겹치는 Roboflow 이미지도 기본적으로 제외
+- Roboflow 내부 중복은 하나만 남기고 제외
+
+중복 검사 결과는 `reports/roboflow_audit/<timestamp>` 아래에 저장한다.
+
+- `duplicate_exact.csv`
+- `duplicate_near.csv`
+- `duplicate_suspect.csv`
+- `roboflow_keep.csv`
+- `dedupe_summary.json`
+- `duplicate_near_montage.png`
+- `duplicate_suspect_montage.png`
 
 ## 5. 사용할 모델들 소개
 
@@ -388,6 +446,7 @@ Severity 분류기는 다음 지표를 사용한다.
 
 - 완료 시각: 2026-05-26 00:27 KST
 - 학습 방식: 기존 `yolov8s_hierarchical_e102`의 `last.pt`에서 40 epochs 추가 학습
+- 총 누적 학습량: 50 epochs (`yolov8s_hierarchical_e102` 10 epochs + `continue40` 40 epochs)
 - 모델: YOLOv8s hierarchical 3-class detection
 - 데이터: `data/detection_hierarchical/hierarchical_detection.yaml`
 - 해상도 / 배치: `imgsz=416`, `batch=8`
