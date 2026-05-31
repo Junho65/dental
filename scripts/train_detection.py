@@ -164,6 +164,15 @@ def main():
     parser.add_argument("--name", default="yolov8s_hierarchical")
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--device", default="0")
+    parser.add_argument("--optimizer", default=None, help="Optional Ultralytics optimizer override, e.g. AdamW or SGD.")
+    parser.add_argument("--lr0", type=float, default=None, help="Optional initial learning rate override.")
+    parser.add_argument("--lrf", type=float, default=None, help="Optional final LR fraction override.")
+    parser.add_argument("--cos-lr", action=argparse.BooleanOptionalAction, default=None, help="Enable/disable cosine LR.")
+    parser.add_argument("--fliplr", type=float, default=None, help="Horizontal flip probability override.")
+    parser.add_argument("--mosaic", type=float, default=None, help="Mosaic augmentation probability override.")
+    parser.add_argument("--close-mosaic", type=int, default=None, help="Disable mosaic this many epochs before training ends.")
+    parser.add_argument("--cutmix", type=float, default=None, help="CutMix augmentation probability override.")
+    parser.add_argument("--mixup", type=float, default=None, help="MixUp augmentation probability override.")
     parser.add_argument(
         "--amp",
         action=argparse.BooleanOptionalAction,
@@ -269,6 +278,18 @@ def main():
         plots=args.plots,
         pretrained=True,
     )
+    optional_train_args = {
+        "optimizer": args.optimizer,
+        "lr0": args.lr0,
+        "lrf": args.lrf,
+        "cos_lr": args.cos_lr,
+        "fliplr": args.fliplr,
+        "mosaic": args.mosaic,
+        "close_mosaic": args.close_mosaic,
+        "cutmix": args.cutmix,
+        "mixup": args.mixup,
+    }
+    train_kw.update({key: value for key, value in optional_train_args.items() if value is not None})
     try:
         model.train(**train_kw)
     finally:

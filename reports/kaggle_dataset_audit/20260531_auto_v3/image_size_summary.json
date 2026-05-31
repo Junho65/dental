@@ -1,0 +1,32 @@
+{
+  "train": {
+    "count": 6565,
+    "width_min": 640,
+    "width_max": 3076,
+    "height_min": 415,
+    "height_max": 1537,
+    "aspect_min": 1.0,
+    "aspect_max": 2.2827,
+    "unique_size_count": 228
+  },
+  "val": {
+    "count": 831,
+    "width_min": 640,
+    "width_max": 3076,
+    "height_min": 415,
+    "height_max": 1537,
+    "aspect_min": 1.0,
+    "aspect_max": 2.2682,
+    "unique_size_count": 60
+  },
+  "test": {
+    "count": 820,
+    "width_min": 640,
+    "width_max": 3076,
+    "height_min": 640,
+    "height_max": 1537,
+    "aspect_min": 1.0,
+    "aspect_max": 2.2439,
+    "unique_size_count": 47
+  }
+}

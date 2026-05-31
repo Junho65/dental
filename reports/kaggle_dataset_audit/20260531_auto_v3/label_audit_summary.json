@@ -1,0 +1,24 @@
+{
+  "data": "C:\\Pywork\\dental\\dental\\data\\detection_hierarchical_zenodo_kaggle_6class_auto_v3\\hierarchical_zenodo_kaggle_6class.yaml",
+  "root": "C:\\Pywork\\dental\\dental\\data\\detection_hierarchical_zenodo_kaggle_6class_auto_v3",
+  "names": [
+    "caries_family",
+    "periapical_lesion",
+    "impacted_tooth",
+    "bone_loss",
+    "cyst",
+    "retained_root"
+  ],
+  "image_counts": {
+    "train": 6565,
+    "val": 831,
+    "test": 820
+  },
+  "label_counts": {
+    "train": 19624,
+    "val": 2592,
+    "test": 2470
+  },
+  "label_issue_counts": {},
+  "missing_required_classes": {}
+}

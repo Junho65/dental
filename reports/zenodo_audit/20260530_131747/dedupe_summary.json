@@ -1,0 +1,38 @@
+{
+  "existing_root": "C:\\Pywork\\dental\\dental\\data\\detection_hierarchical",
+  "roboflow_root": "C:\\Pywork\\dental\\dental\\data\\raw\\zenodo\\panoramic_radiography_yolo_dataset_14_classes",
+  "output_dir": "C:\\Pywork\\dental\\dental\\reports\\zenodo_audit\\20260530_131747",
+  "thresholds": {
+    "near_duplicate_distance_lte": 4,
+    "suspect_duplicate_distance_lte": 8
+  },
+  "existing_image_count": 7466,
+  "existing_image_count_by_split": {
+    "train": 5405,
+    "val": 745,
+    "test": 1316
+  },
+  "roboflow_original_image_count": 1808,
+  "roboflow_original_image_count_by_split": {
+    "test": 100,
+    "roboflow": 180,
+    "train": 1375,
+    "val": 153
+  },
+  "exact_duplicate_count": 1734,
+  "near_duplicate_count": 1591,
+  "suspect_duplicate_count": 956,
+  "excluded_roboflow_image_count": 1612,
+  "final_usable_roboflow_image_count": 196,
+  "existing_val_test_duplicate_roboflow_image_count": 241,
+  "skipped_image_count": 0,
+  "outputs": {
+    "duplicate_exact_csv": "C:\\Pywork\\dental\\dental\\reports\\zenodo_audit\\20260530_131747\\duplicate_exact.csv",
+    "duplicate_near_csv": "C:\\Pywork\\dental\\dental\\reports\\zenodo_audit\\20260530_131747\\duplicate_near.csv",
+    "duplicate_suspect_csv": "C:\\Pywork\\dental\\dental\\reports\\zenodo_audit\\20260530_131747\\duplicate_suspect.csv",
+    "roboflow_keep_csv": "C:\\Pywork\\dental\\dental\\reports\\zenodo_audit\\20260530_131747\\roboflow_keep.csv",
+    "skipped_images_csv": "C:\\Pywork\\dental\\dental\\reports\\zenodo_audit\\20260530_131747\\skipped_images.csv",
+    "duplicate_suspect_montage_png": "C:\\Pywork\\dental\\dental\\reports\\zenodo_audit\\20260530_131747\\duplicate_suspect_montage.png",
+    "duplicate_near_montage_png": "C:\\Pywork\\dental\\dental\\reports\\zenodo_audit\\20260530_131747\\duplicate_near_montage.png"
+  }
+}
