@@ -235,7 +235,7 @@ def build_presentation() -> Presentation:
     p.font.bold = True
     p.font.color.rgb = TEAL
     p2 = tf.add_paragraph()
-    p2.text = "파노라마 치과 X-ray에서 병변 위치를 자동 검출하고,\n충치 계열 병변은 추가 분류기로 세분화하여 설명 가능한 진단 보조를 제공한다."
+    p2.text = "파노라마 치과 X-ray에서 병변 위치를 자동 검출하고,\n충치 계열 응답 정규화와 치주 후속 분류를 결합한 설명 가능한 진단 보조를 제공한다."
     p2.font.name = "Malgun Gothic"
     p2.font.size = Pt(24)
     p2.font.bold = True
@@ -288,7 +288,7 @@ def build_presentation() -> Presentation:
         "핵심 목표",
         [
             "파노라마 X-ray에서 병변 의심 부위를 bbox 기반으로 자동 검출한다.",
-            "충치 계열 병변은 추가 분류기로 `caries`와 `deep_caries`를 구분한다.",
+            "충치 계열 병변은 detector 내부 라벨과 무관하게 서비스 응답에서 `caries`로 통일한다.",
             "웹 화면에서 결과를 시각화하고, 향후 치료 옵션과 치료비 추정으로 확장 가능한 구조를 만든다.",
             "로컬 환경에서 학습, 평가, 서빙이 모두 가능한 local-first 워크플로우를 유지한다.",
         ],
@@ -320,8 +320,8 @@ def build_presentation() -> Presentation:
         Inches(4.95),
         "Hierarchical 설계",
         [
-            "`caries`와 `deep_caries`를 detector가 직접 구분하도록 강제하면 희소 클래스와 coarse label 문제가 커진다.",
-            "따라서 detector는 `caries_family`까지 먼저 찾고, 이후 crop classifier가 severity를 세분화한다.",
+            "`deep_caries`는 표본 수가 너무 적어 서비스용 별도 클래스로 유지하기 어렵다.",
+            "따라서 detector 내부 라벨이 `caries`/`deep_caries`/`caries_family`여도 서빙 응답은 `caries`로 정규화한다.",
         ],
     )
     add_bullet_box(
@@ -351,7 +351,7 @@ def build_presentation() -> Presentation:
             "Django /predict/",
             "YOLO Detector",
             "ROI Crop",
-            "Severity Classifier",
+            "Response Normalize",
         ],
     )
     add_pipeline_box(
@@ -372,9 +372,9 @@ def build_presentation() -> Presentation:
         Inches(1.9),
         "핵심 설명",
         [
-            "1단계 detector는 `caries_family`, `periapical_lesion`, `impacted_tooth`를 찾는다. 이 중 `caries_family`가 검출된 ROI만 잘라서 severity classifier에 전달한다.",
-            "2단계 classifier는 crop 단위로 `caries`와 `deep_caries`를 판별하고, confidence가 임계값을 넘으면 최종 class label을 덮어쓴다.",
-            "즉, detector와 classifier가 병렬로 독립 추론하는 구조가 아니라, 검출 결과 일부를 후속 refinement로 세분화하는 구조다.",
+            "main detector는 `caries_family`, `periapical_lesion`, `impacted_tooth`, `retained_root`를 찾고, 서비스 응답에서는 충치 계열을 모두 `caries`로 통일한다.",
+            "periodontal detector는 `bone_loss`, `furcation_involvement`를 별도로 찾고, 검출 ROI에 대해 후속 중증도 분류기를 적용한다.",
+            "즉, 현재 서빙 구조는 충치 세분화가 아니라 서비스용 라벨 정규화와 치주 후속 분류를 결합한 형태다.",
         ],
     )
     add_footer(slide, 4)
@@ -457,8 +457,8 @@ def build_presentation() -> Presentation:
     model_data = [
         ["구성 요소", "모델 / 설정", "선정 이유"],
         ["Detection", "Ultralytics YOLOv8n\nimgsz=416, batch=16, epochs=50,\nworkers=4, patience=10", "경량 모델로 로컬 GPU에서도 실험 가능하고, bbox 검출 속도와 정확도의 균형이 좋다."],
-        ["Severity", "EfficientNet-B0 classifier\ninput=224\nclasses=caries, deep_caries", "crop 분류 문제에 적합한 경량 CNN이며, pseudo-label 재학습 루프와 결합하기 쉽다."],
-        ["Serving", "Django + DRF `/predict/`\n조건부 refinement 및 JSON 응답 조립", "웹 업로드, 추론, 시각화, 향후 진료비 추정 모듈까지 하나의 서비스 흐름으로 연결하기 쉽다."],
+        ["Follow-up", "EfficientNet-B0 classifiers\ninput=224\nperiodontal severity stages", "치주 ROI 후속 분류 문제에 적합한 경량 CNN이며 서비스 응답과 수가 라우팅에 직접 연결된다."],
+        ["Serving", "Django + DRF `/predict/`\n라벨 정규화 및 JSON 응답 조립", "웹 업로드, 추론, 시각화, 향후 진료비 추정 모듈까지 하나의 서비스 흐름으로 연결하기 쉽다."],
     ]
     add_table_slide(
         slide,
@@ -488,7 +488,7 @@ def build_presentation() -> Presentation:
         [
             "`python manage.py runserver`로 Django 서비스를 실행한다.",
             "`GET /health/`로 상태 확인, `POST /predict/`로 multipart 이미지 업로드 추론을 처리한다.",
-            "응답에는 detection bbox, class_name, confidence, severity 관련 메타데이터가 포함된다.",
+            "응답에는 detection bbox, class_name, confidence, 치주 severity 관련 메타데이터가 포함된다.",
         ],
     )
     add_bullet_box(
@@ -551,7 +551,7 @@ def build_presentation() -> Presentation:
             "flat 4-class vs hierarchical 3-class detection",
             "imgsz=416 vs 512",
             "class balancing on/off",
-            "pseudo-label severity classifier 사용 여부",
+            "periodontal follow-up classifier 사용 여부",
         ],
     )
     add_footer(slide, 9)
@@ -570,8 +570,8 @@ def build_presentation() -> Presentation:
         "현재 기준 산출물",
         [
             "데이터 준비 스크립트: DENTEX, CariesXrays, UMFIH를 YOLO 기반 detection 파이프라인으로 정리하는 스크립트가 준비되어 있다.",
-            "학습 파이프라인: hierarchical detection dataset 자동 준비, YOLOv8n 학습, severity classifier 학습 및 pseudo-labeling 흐름이 README에 정리되어 있다.",
-            "서빙 파이프라인: Django `/predict/` API가 detector 결과를 받은 뒤 ROI crop과 severity refinement를 수행한다.",
+            "학습 파이프라인: hierarchical detection dataset 자동 준비, YOLOv8n 학습, periodontal follow-up classifier 학습 흐름이 README에 정리되어 있다.",
+            "서빙 파이프라인: Django `/predict/` API가 detector 결과를 받은 뒤 충치 계열 응답을 `caries`로 정규화하고 치주 ROI에만 후속 분류를 수행한다.",
             "웹 인터페이스: 업로드, 탐지 결과 시각화, 탐지 목록, 치료비 추정 테이블, 공지 문구 등 제출 시연용 화면이 구현되어 있다.",
             "문서화: README와 ARCHITECTURE 문서에 데이터셋, 모델, 평가, 개발 일정, 참고문헌이 정리되어 있다.",
         ],
@@ -593,7 +593,7 @@ def build_presentation() -> Presentation:
         [
             "웹 서비스는 진단 확정 도구가 아니라 진단 보조용 인터페이스다.",
             "치료비 추정은 아직 규칙 기반 시범 기능이며, 실제 진료비는 병원과 처치 방식에 따라 달라질 수 있다.",
-            "severity classifier와 detector 모두 추가 임상 검증과 외부 데이터 평가가 필요하다.",
+            "치주 follow-up classifier와 detector 모두 추가 임상 검증과 외부 데이터 평가가 필요하다.",
         ],
     )
     add_bullet_box(

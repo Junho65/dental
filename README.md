@@ -163,6 +163,38 @@ Typical commands:
 ```bash
 python scripts/merge_yolo_detection_datasets.py --base data/detection --extra data/detection_cariesxrays --out data/detection_merged
 python scripts/merge_yolo_detection_datasets.py --base data/detection_merged --extra data/detection_umfih --out data/detection_merged_umfih
+python scripts/merge_yolo_detection_datasets.py --base data/detection_main_4class_no_cyst_no_periodontal --extra data/detection_kaggle_pediatric_selected_4class --out data/detection_main_4class_with_pediatric --yaml-name main_4class_with_pediatric.yaml
+```
+
+Notes:
+- The script now reads the class order from each dataset YAML and refuses to merge if the orders differ.
+- Use `--yaml-name` when the merged output should expose a dataset-specific YAML such as `main_4class_with_pediatric.yaml`.
+
+### `scripts/run_pediatric_service_finetune.py`
+
+Purpose:
+- Fine-tune the currently served 4-class detector starting from `artifacts/detection/serve/best.pt`
+- Build the pediatric 4-class subset from `data/detection_kaggle_pediatric_selected_6class`
+- Merge it into `data/detection_main_4class_no_cyst_no_periodontal`
+- Evaluate baseline vs candidate on both the main and pediatric test sets
+- Promote the new `best.pt` into `artifacts/detection/serve/best.pt` only when the gating rules pass
+
+Default outputs:
+- `data/detection_kaggle_pediatric_selected_4class`
+- `data/detection_main_4class_with_pediatric`
+- `artifacts/detection/yolov8s_serve_pediatric_ft_v1`
+- `reports/yolov8s_serve_pediatric_ft_v1`
+
+Command:
+
+```bash
+python scripts/run_pediatric_service_finetune.py
+```
+
+Useful dry-run style command when you want dataset prep and evaluation wiring without replacing the service weights:
+
+```bash
+python scripts/run_pediatric_service_finetune.py --skip-train --candidate-weights artifacts/detection/serve/best.pt --no-promote
 ```
 
 ### Recommended execution order
@@ -240,15 +272,16 @@ python train_detection.py --data data/detection_hierarchical/hierarchical_detect
 python train_detection.py --data data/detection_merged_umfih/merged_detection.yaml --deep-caries-balance
 ```
 
-## 3B) Hierarchical detection + severity classifier
+## 3B) Hierarchical detection + follow-up classifiers
 
-Use this workflow when you want:
-- detection to learn `caries_family` instead of forcing `caries` vs `deep_caries` directly
-- a second-stage classifier to decide `caries` vs `deep_caries`
-- optional pseudo-labeling on CariesXrays crops
+Current service policy:
+- the detector may still be trained on `caries_family`
+- the served API normalizes caries-family detections to `caries`
+- the old caries-vs-deep-caries refinement stage is retired from the service path because labeled `deep_caries` coverage is too sparse for reliable deployment
 
-At serving time, the same severity classifier can also be applied to flat detector outputs
-(`caries` / `deep_caries`) as a refinement or override stage.
+The remaining follow-up classifier workflows are:
+- metadata-only periapical follow-up routing
+- periodontal severity classification on detected `bone_loss` / `furcation_involvement` crops
 
 Build the hierarchical detection dataset from the merged YOLO dataset:
 
@@ -257,34 +290,42 @@ python scripts/prepare_hierarchical_detection_dataset.py --data data/detection_m
 python train_detection.py --data data/detection_hierarchical/hierarchical_detection.yaml --no-deep-caries-balance
 ```
 
-Prepare labeled severity crops from DENTEX and unlabeled lesion crops from CariesXrays:
+If you want to train a follow-up crop classifier for another lesion family without changing
+the served detector taxonomy, first export crop CSVs from the labels you want to classify:
 
 ```bash
-python scripts/prepare_severity_dataset.py
+python scripts/prepare_followup_crop_dataset.py --data data/your_followup_dataset/data.yaml --class-names class_a class_b --out data/followup_custom
 ```
 
-Train the severity classifier on labeled DENTEX crops:
+Then train with the same class order:
 
 ```bash
-python scripts/train_severity_classifier.py
+python scripts/train_severity_classifier.py --train-csv data/followup_custom/train.csv --val-csv data/followup_custom/val.csv --output-dir artifacts/severity/periapical_followup --class-names class_a class_b
 ```
 
-The default severity backbone is `TorchXRayVision DenseNet121` with
-`densenet121-res224-all` chest X-ray pretrained weights.
+At serving time, an optional metadata-only periapical follow-up model can be loaded with:
+- `DENTAL_PERIAPICAL_FOLLOWUP_WEIGHTS`
+- `DENTAL_PERIAPICAL_FOLLOWUP_CONF`
 
-Generate high-confidence pseudo-labels from CariesXrays lesion crops, then retrain with them:
+For the periodontal severity classifiers, reevaluate an existing checkpoint on the held-out
+test split with:
 
 ```bash
-python scripts/pseudolabel_severity.py --weights artifacts/severity/xrv_densenet121/best.pt --output-csv artifacts/severity/pseudo/train.csv
-python scripts/train_severity_classifier.py --pseudo-csv artifacts/severity/pseudo/train.csv --output-dir artifacts/severity/xrv_densenet121_pseudo
+python scripts/eval_severity_classifier.py --checkpoint artifacts/severity/serve/bone_loss/best.pt --test-csv data/severity_periodontal/bone_loss/test.csv --out-json artifacts/severity/serve/bone_loss/test_metrics.json
+python scripts/eval_severity_classifier.py --checkpoint artifacts/severity/serve/furcation_involvement/best.pt --test-csv data/severity_periodontal/furcation_involvement/test.csv --out-json artifacts/severity/serve/furcation_involvement/test_metrics.json
 ```
 
-For Django serving, place the selected severity checkpoint at:
-- `artifacts/severity/serve/best.pt`
+To retrain and reevaluate both periodontal severity classifiers in one run:
 
-Or set:
-- `DENTAL_SEVERITY_WEIGHTS`
-- `DENTAL_SEVERITY_CONF`
+```bash
+python scripts/run_periodontal_severity_retrain.py --epochs 20 --selection-metric val_f1_macro --early-stopping-metric val_f1_macro
+```
+
+By default this warm-starts each run from the currently served checkpoint, writes per-lesion
+train/test metrics under `artifacts/severity/periodontal_retrain/<timestamp>/`, and compares the
+candidate test metrics against the currently served checkpoint. Add `--promote` to replace
+`artifacts/severity/serve/{bone_loss,furcation_involvement}/best.pt` only when the candidate
+beats the served model on the chosen promotion metric.
 
 TensorBoard while training:
 
