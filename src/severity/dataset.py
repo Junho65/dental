@@ -13,7 +13,6 @@ from torchvision import transforms
 
 
 SEVERITY_CLASS_NAMES = ["caries", "deep_caries"]
-SEVERITY_CLASS_TO_ID = {name: idx for idx, name in enumerate(SEVERITY_CLASS_NAMES)}
 DEFAULT_SEVERITY_MODEL_NAME = "xrv_densenet121"
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)

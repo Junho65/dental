@@ -191,7 +191,7 @@ def _train_single_run(
     if args.init_checkpoint is not None:
         init_checkpoint = torch.load(args.init_checkpoint, map_location="cpu")
         model.load_state_dict(init_checkpoint["state_dict"])
-    classifier_head = configure_head_only_finetuning(args.model_name, model)
+    configure_head_only_finetuning(args.model_name, model)
     trainable_params = [param for param in model.parameters() if param.requires_grad]
     print(
         f"Fine-tuning mode: head_only "

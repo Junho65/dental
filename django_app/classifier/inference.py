@@ -23,7 +23,6 @@ API_CLASS_NAMES = [
     "retained_root",
 ]
 API_CLASS_TO_ID = {name: idx for idx, name in enumerate(API_CLASS_NAMES)}
-PERIODONTAL_CLASS_NAMES = {"bone_loss", "furcation_involvement"}
 
 
 def _resolve_required_weights(explicit: Optional[str]) -> Path:
