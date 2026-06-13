@@ -4,6 +4,7 @@ import argparse
 import json
 import random
 from pathlib import Path
+import sys
 
 import numpy as np
 import pandas as pd
@@ -15,7 +16,11 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from src.severity.dataset import SEVERITY_CLASS_NAMES, SeverityCropDataset
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
+from src.severity.dataset import SEVERITY_CLASS_NAMES, SeverityCropDataset  # noqa: F401 (default kept for backward compat)
 from src.severity.model import (
     configure_head_only_finetuning,
     DEFAULT_SEVERITY_MODEL_NAME,
@@ -60,13 +65,13 @@ def _save_dataframe(df: pd.DataFrame, csv_path: Path) -> Path:
     return csv_path
 
 
-def _build_class_weights(train_df: pd.DataFrame) -> torch.Tensor:
+def _build_class_weights(train_df: pd.DataFrame, class_names: list[str]) -> torch.Tensor:
     counts = train_df["label"].value_counts()
     total = max(int(counts.sum()), 1)
     weights = []
-    for class_name in SEVERITY_CLASS_NAMES:
+    for class_name in class_names:
         count = max(int(counts.get(class_name, 0)), 1)
-        weights.append(total / (len(SEVERITY_CLASS_NAMES) * count))
+        weights.append(total / (len(class_names) * count))
     return torch.tensor(weights, dtype=torch.float32)
 
 
@@ -143,25 +148,28 @@ def _train_single_run(
     seed: int,
     run_name: str,
     device: str,
+    class_names: list[str],
 ) -> dict:
     _set_seed(seed)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     train_csv = _save_dataframe(train_df, output_dir / "train_combined.csv")
     val_csv = _save_dataframe(val_df, output_dir / "val_fold.csv")
-    class_weights = _build_class_weights(train_df)
+    class_weights = _build_class_weights(train_df, class_names)
 
     train_ds = SeverityCropDataset(
         train_csv,
         train=True,
         img_size=args.img_size,
         model_name=args.model_name,
+        class_names=class_names,
     )
     val_ds = SeverityCropDataset(
         val_csv,
         train=False,
         img_size=args.img_size,
         model_name=args.model_name,
+        class_names=class_names,
     )
     loader_generator = torch.Generator().manual_seed(seed)
     train_loader = DataLoader(
@@ -173,12 +181,16 @@ def _train_single_run(
     )
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=0)
 
+    use_pretrained_backbone = args.init_checkpoint is None
     model = build_severity_model(
         model_name=args.model_name,
-        num_classes=len(SEVERITY_CLASS_NAMES),
-        pretrained=True,
+        num_classes=len(class_names),
+        pretrained=use_pretrained_backbone,
         xrv_weights=args.xrv_weights,
     ).to(device)
+    if args.init_checkpoint is not None:
+        init_checkpoint = torch.load(args.init_checkpoint, map_location="cpu")
+        model.load_state_dict(init_checkpoint["state_dict"])
     classifier_head = configure_head_only_finetuning(args.model_name, model)
     trainable_params = [param for param in model.parameters() if param.requires_grad]
     print(
@@ -231,7 +243,7 @@ def _train_single_run(
             "xrv_weights": args.xrv_weights,
             "fine_tuning_mode": "head_only",
             "img_size": args.img_size,
-            "class_names": SEVERITY_CLASS_NAMES,
+            "class_names": class_names,
             "val_loss": val_loss,
             "val_accuracy": val_accuracy,
             "val_f1_macro": val_f1,
@@ -279,6 +291,7 @@ def _train_single_run(
     summary = {
         "run_name": run_name,
         "seed": seed,
+        "class_names": class_names,
         "best_epoch": best_epoch,
         "best_checkpoint_metric": args.selection_metric,
         "best_checkpoint_metric_value": best_selection_value,
@@ -300,13 +313,19 @@ def _train_single_run(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train a binary severity classifier on lesion crops.")
+    parser = argparse.ArgumentParser(description="Train a severity classifier on lesion crops.")
     parser.add_argument("--train-csv", type=Path, default=Path("data/severity/train.csv"))
     parser.add_argument("--val-csv", type=Path, default=Path("data/severity/val.csv"))
     parser.add_argument("--pseudo-csv", type=Path, default=None)
     parser.add_argument("--output-dir", type=Path, default=Path("artifacts/severity/xrv_densenet121"))
     parser.add_argument("--model-name", default=DEFAULT_SEVERITY_MODEL_NAME)
     parser.add_argument("--xrv-weights", default=DEFAULT_XRV_WEIGHTS)
+    parser.add_argument(
+        "--init-checkpoint",
+        type=Path,
+        default=None,
+        help="Optional local checkpoint used to initialize the model without downloading pretrained weights.",
+    )
     parser.add_argument("--img-size", type=int, default=224)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--epochs", type=int, default=12)
@@ -330,6 +349,12 @@ def main() -> None:
     parser.add_argument("--lr-patience", type=int, default=4)
     parser.add_argument("--lr-factor", type=float, default=0.5)
     parser.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"])
+    parser.add_argument(
+        "--class-names",
+        nargs="+",
+        default=None,
+        help="Class names in label order. If omitted, derived from sorted unique labels in train CSV.",
+    )
     args = parser.parse_args()
 
     if args.device == "auto":
@@ -349,6 +374,12 @@ def main() -> None:
     if not pseudo_df.empty:
         train_df = pd.concat([train_df, pseudo_df], ignore_index=True)
 
+    if args.class_names:
+        class_names = args.class_names
+    else:
+        class_names = sorted(train_labeled_df["label"].unique().tolist())
+    print(f"Class names: {class_names}")
+
     summary = _train_single_run(
         train_df=train_df,
         val_df=val_labeled_df.copy(),
@@ -357,6 +388,7 @@ def main() -> None:
         seed=args.seed,
         run_name="single_run",
         device=device,
+        class_names=class_names,
     )
     print(json.dumps(summary, indent=2))
 

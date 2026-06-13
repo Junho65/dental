@@ -86,6 +86,7 @@ class SeverityCropDataset(Dataset):
         train: bool = True,
         img_size: int = 224,
         model_name: str = DEFAULT_SEVERITY_MODEL_NAME,
+        class_names: list[str] | None = None,
     ):
         self.csv_path = Path(csv_path)
         self.df = pd.read_csv(self.csv_path)
@@ -94,6 +95,8 @@ class SeverityCropDataset(Dataset):
         if "weight" not in self.df.columns:
             self.df["weight"] = 1.0
         self.transforms = build_transforms(img_size=img_size, train=train, model_name=model_name)
+        _names = class_names if class_names is not None else SEVERITY_CLASS_NAMES
+        self.class_to_id = {name: idx for idx, name in enumerate(_names)}
 
     def __len__(self) -> int:
         return len(self.df)
@@ -102,11 +105,11 @@ class SeverityCropDataset(Dataset):
         row = self.df.iloc[idx]
         img_path = Path(row["image_path"])
         label_name = str(row["label"])
-        if label_name not in SEVERITY_CLASS_TO_ID:
+        if label_name not in self.class_to_id:
             raise KeyError(f"Unknown severity label '{label_name}' in {self.csv_path}")
 
         image = Image.open(img_path).convert("RGB")
         image = self.transforms(image)
-        label = SEVERITY_CLASS_TO_ID[label_name]
+        label = self.class_to_id[label_name]
         weight = float(row.get("weight", 1.0))
         return image, torch.tensor(label, dtype=torch.long), torch.tensor(weight, dtype=torch.float32)
