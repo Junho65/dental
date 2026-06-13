@@ -15,10 +15,7 @@
     const previewImage = document.getElementById("preview-image");
     const overlayCanvas = document.getElementById("overlay-canvas");
     const revealHandle = document.getElementById("reveal-handle");
-    const revealControls = document.getElementById("reveal-controls");
-    const revealSlider = document.getElementById("reveal-slider");
     const detectionCount = document.getElementById("detection-count");
-    const topConfidence = document.getElementById("top-confidence");
     const summaryStrip = document.getElementById("summary-strip");
     const detectionList = document.getElementById("detection-list");
     const treatmentSummary = document.getElementById("treatment-summary");
@@ -27,15 +24,32 @@
     const statusMessage = document.getElementById("status-message");
     const statusStages = document.getElementById("status-stages");
     const classLegend = document.getElementById("class-legend");
+    const insightGrid = document.querySelector(".insight-grid");
+    const treatmentSection = document.querySelector(".treatment-section");
+    const resultsDisclaimer = document.querySelector(".results-disclaimer");
 
     const STAGE_ORDER = ["upload", "detect", "refine", "render"];
-    const LEGEND_CLASS_NAMES = [
-        "caries",
-        "deep_caries",
-        "caries_family",
-        "periapical_lesion",
-        "impacted_tooth",
-    ];
+
+    const showResultSections = () => {
+        [insightGrid, treatmentSection, resultsDisclaimer].forEach((el) => {
+            if (!el) return;
+            el.classList.remove("is-hidden");
+        });
+    };
+
+    const hideResultSections = () => {
+        [insightGrid, treatmentSection, resultsDisclaimer].forEach((el) => {
+            if (!el) return;
+            el.classList.add("is-hidden");
+        });
+    };
+    const LEGEND_CLASS_NAMES = classInfo.map((item) => item.name);
+    const PERIODONTAL_CLASS_NAMES = new Set(["bone_loss", "furcation_involvement"]);
+    const PERIODONTAL_STAGE_LABELS = {
+        mild: "경도",
+        medium: "중등도",
+        severe: "중증",
+    };
 
     const state = {
         file: null,
@@ -44,9 +58,191 @@
         sortedDetections: [],
         activeIndex: null,
         revealRatio: 1,
+        hospitalFilter: "clinic",
+        surgeryFilter: "primary",
+        disabilityFilter: "general",
+        treatmentScopeFilter: "all",
+        expandedLesionCards: {},
+    };
+
+    const FALLBACK_HOSPITAL_PATTERNS = {
+        clinic: /(의원|치과의원|보건의료원)/,
+        general: /(종합|상급종합|종병이상|치과병원)/,
+        dental_univ: /(치대부속|치과대학|대학부속)/,
+    };
+
+    const getStructuredHospitalCategory = (option) => {
+        if (option?.hospital_category) {
+            return option.hospital_category;
+        }
+        const fullText = [option?.hospital_label, option?.name, option?.full_name]
+            .filter(Boolean)
+            .join(" ");
+        if (FALLBACK_HOSPITAL_PATTERNS.dental_univ.test(fullText)) {
+            return "dental_univ";
+        }
+        if (FALLBACK_HOSPITAL_PATTERNS.general.test(fullText)) {
+            return "general";
+        }
+        if (FALLBACK_HOSPITAL_PATTERNS.clinic.test(fullText)) {
+            return "clinic";
+        }
+        return "all";
+    };
+
+    const getStructuredSurgeryRole = (option) => {
+        if (option?.surgery_role) {
+            return option.surgery_role;
+        }
+        const fullText = [option?.name, option?.full_name]
+            .filter(Boolean)
+            .join(" ");
+        return /제2의수술/.test(fullText) ? "secondary" : "primary";
+    };
+
+    const isStructuredDisabledOption = (option) => {
+        if (typeof option?.disability_surcharge === "boolean") {
+            return option.disability_surcharge;
+        }
+        const fullText = [option?.name, option?.full_name, option?.label]
+            .filter(Boolean)
+            .join(" ");
+        return /장애인|장애 가산|장애가산|장애/.test(fullText);
+    };
+
+    const matchesStructuredHospitalFilter = (option) => {
+        if (state.hospitalFilter === "all") {
+            return true;
+        }
+        return getStructuredHospitalCategory(option) === state.hospitalFilter;
+    };
+
+    const matchesStructuredSurgeryFilter = (option) => {
+        const surgeryRole = getStructuredSurgeryRole(option);
+        switch (state.surgeryFilter) {
+            case "primary":
+                return surgeryRole !== "secondary";
+            case "secondary":
+                return surgeryRole === "secondary";
+            default:
+                return true;
+        }
+    };
+
+    const HOSPITAL_FILTER_HINTS = {
+        all: "모든 의료기관의 예상 비용을 표시합니다.",
+        clinic: "치과의원(동네 치과) 기준입니다. 방문 예정 병원이 치과의원이라면 이 요금이 적용됩니다.",
+        general: "종합병원·상급종합병원 기준입니다. 대형 병원 치과나 대학병원 치과(비치대부속)가 해당됩니다.",
+        dental_univ: "치과대학부속병원 기준입니다. 서울대, 연세대, 경희대 등 치과대학에 딸린 병원이 해당됩니다.",
+    };
+
+    const SURGERY_FILTER_HINTS = {
+        all: "",
+        primary: " 이 시술이 해당 방문의 유일하거나 주된 수술인 경우입니다.",
+        secondary: " 같은 방문에서 다른 수술도 함께 시행할 때의 요금입니다(단독 수술보다 저렴하게 책정됩니다).",
+    };
+
+    const DISABILITY_FILTER_HINTS = {
+        general: " 장애인 가산이 명시되지 않은 옵션만 표시합니다.",
+        disabled: " 장애인 가산이 명시된 옵션만 표시합니다. 현재 저장된 공공 수가에 해당 항목이 없으면 빈 결과가 나올 수 있습니다.",
+    };
+
+    const TREATMENT_SCOPE_HINTS = {
+        all: " 대표 진료항목과 추가 진료항목을 함께 표시합니다.",
+        primary_only: " 대표 진료항목만 표시합니다.",
+    };
+
+    const matchesHospitalFilter = (optionName) => {
+        const name = optionName || "";
+        switch (state.hospitalFilter) {
+            case "clinic":
+                return !/(종합|종병이상|상급|치대부속|대학부속)/.test(name);
+            case "general":
+                return /(종합|종병이상|상급종합)/.test(name);
+            case "dental_univ":
+                return /(치대부속|치과대학|대학부속)/.test(name);
+            default:
+                return true;
+        }
+    };
+
+    const matchesSurgeryFilter = (optionName) => {
+        const name = optionName || "";
+        switch (state.surgeryFilter) {
+            case "primary":
+                return !/제2/.test(name);
+            case "secondary":
+                return /제2/.test(name);
+            default:
+                return true;
+        }
+    };
+
+    const isDisabledOption = (option) => {
+        const fullText = [option?.name, option?.full_name, option?.label]
+            .filter(Boolean)
+            .join(" ");
+        return /장애인|장애 가산|장애가산|장애/.test(fullText);
+    };
+
+    const matchesDisabilityFilter = (option) => {
+        switch (state.disabilityFilter) {
+            case "general":
+                return !isDisabledOption(option);
+            case "disabled":
+                return isDisabledOption(option);
+            default:
+                return true;
+        }
+    };
+
+    const isCostFilterActive = () =>
+        state.hospitalFilter !== "all" || state.surgeryFilter !== "all" || state.disabilityFilter !== "general";
+
+    const updateFilterHint = () => {
+        if (!filterHint) {
+            return;
+        }
+        const hintH = HOSPITAL_FILTER_HINTS[state.hospitalFilter] || "";
+        const hintS = SURGERY_FILTER_HINTS[state.surgeryFilter] || "";
+        const hintD = DISABILITY_FILTER_HINTS[state.disabilityFilter] || "";
+        const hintT = TREATMENT_SCOPE_HINTS[state.treatmentScopeFilter] || "";
+        filterHint.textContent =
+            hintH + hintS + hintD + hintT || "장애인 가산이 명시되지 않은 일반 옵션만 표시합니다.";
+    };
+
+    const getFilteredOptions = (options) => {
+        if (!isCostFilterActive()) {
+            return options;
+        }
+        const filtered = options.filter(
+            (opt) =>
+                matchesStructuredHospitalFilter(opt) &&
+                matchesStructuredSurgeryFilter(opt) &&
+                (state.disabilityFilter === "general"
+                    ? !isStructuredDisabledOption(opt)
+                    : state.disabilityFilter === "disabled"
+                        ? isStructuredDisabledOption(opt)
+                        : true)
+        );
+        return filtered;
     };
 
     const currencyFormatter = new Intl.NumberFormat("ko-KR");
+
+    const buildOptionMeta = (option) => {
+        const parts = [];
+        if (option?.hospital_label) {
+            parts.push(option.hospital_label);
+        }
+        if (getStructuredSurgeryRole(option) === "secondary") {
+            parts.push("제2의수술");
+        }
+        if (isStructuredDisabledOption(option)) {
+            parts.push("장애인 가산");
+        }
+        return parts.join(" · ");
+    };
 
     const escapeHtml = (value) =>
         String(value ?? "").replace(/[&<>"']/g, (char) => {
@@ -59,8 +255,6 @@
             };
             return entities[char] || char;
         });
-
-    const fmtPercent = (value) => `${(value * 100).toFixed(1)}%`;
 
     const fmtSize = (bytes) => {
         if (!Number.isFinite(bytes)) {
@@ -79,6 +273,14 @@
         return `${currencyFormatter.format(Math.round(value))}원`;
     };
 
+    const toFiniteNumber = (value) => {
+        if (value == null || value === "") {
+            return NaN;
+        }
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : NaN;
+    };
+
     const fmtRange = (min, max) => {
         const hasMin = Number.isFinite(min);
         const hasMax = Number.isFinite(max);
@@ -94,9 +296,40 @@
         return fmtCurrency(hasMin ? min : max);
     };
 
+    const getVisualClassName = (className) => className;
+
+    const getDisplayInfo = (className) => {
+        const info = classMap.get(getVisualClassName(className));
+        return info || classMap.get(className) || {};
+    };
+
     const getDisplayName = (className) => {
-        const info = classMap.get(className) || {};
+        const info = getDisplayInfo(className);
         return info.label_ko || info.label || className;
+    };
+
+    const getOfficialName = (className) => {
+        const info = getDisplayInfo(className);
+        return info.official_label_ko || info.label_ko || info.label || className;
+    };
+
+    const getTreatmentDisplayName = (className) => {
+        if (className === "caries") {
+            return "충치";
+        }
+        return getDisplayName(className);
+    };
+
+    const getTreatmentOfficialName = (className) => {
+        if (className === "caries") {
+            return "치아우식증";
+        }
+        return getOfficialName(className);
+    };
+
+    const getClassColor = (className) => {
+        const info = getDisplayInfo(className);
+        return info.color || "#ffffff";
     };
 
     const getAreaLabel = (bbox) => {
@@ -165,14 +398,17 @@
             return;
         }
         classLegend.innerHTML = LEGEND_CLASS_NAMES.map((name) => {
-            const info = classMap.get(name);
+            const info = getDisplayInfo(name);
             if (!info) {
                 return "";
             }
+            const officialName = getOfficialName(name);
             return `
                 <li class="legend-item">
-                    <span class="legend-swatch" style="background:${info.color || "#ffffff"};"></span>
-                    <span>${escapeHtml(info.label_ko || info.label || name)}</span>
+                    <span class="legend-swatch" style="background:${getClassColor(name)};"></span>
+                    <span class="legend-copy">
+                        <strong>${escapeHtml(officialName)}</strong>
+                    </span>
                 </li>
             `;
         }).join("");
@@ -236,8 +472,7 @@
         ctx.clip();
 
         renderList.forEach((detection, index) => {
-            const info = classMap.get(detection.class_name) || {};
-            const color = info.color || "#ffffff";
+            const color = getClassColor(detection.class_name);
             const [x1, y1, x2, y2] = detection.bbox_xyxy;
             const left = x1 * scaleX;
             const top = y1 * scaleY;
@@ -245,7 +480,8 @@
             const boxHeight = (y2 - y1) * scaleY;
             const isActive = hasActive && index === state.activeIndex;
             const dim = hasActive && !isActive;
-            const label = `${index + 1}. ${getDisplayName(detection.class_name)} ${fmtPercent(detection.confidence)}`;
+            const canvasName = getOfficialName(detection.class_name);
+            const label = `${index + 1}. ${canvasName}`;
 
             ctx.globalAlpha = dim ? 0.32 : 1;
             ctx.lineWidth = isActive ? 3.5 : 2;
@@ -272,7 +508,7 @@
             return;
         }
         const hasImage = Boolean(state.objectUrl) && state.detections.length > 0;
-        revealHandle.classList.toggle("is-visible", hasImage && state.revealRatio < 1);
+        revealHandle.classList.toggle("is-visible", hasImage);
         if (!hasImage) {
             return;
         }
@@ -281,14 +517,6 @@
         const offsetLeft = rect.left - mediaRect.left;
         const x = offsetLeft + rect.width * state.revealRatio;
         revealHandle.style.left = `${x}px`;
-    };
-
-    const updateRevealControlsVisibility = () => {
-        if (!revealControls) {
-            return;
-        }
-        const show = Boolean(state.objectUrl) && state.detections.length > 0;
-        revealControls.classList.toggle("is-hidden", !show);
     };
 
     const hitTestDetection = (clientX, clientY) => {
@@ -378,16 +606,18 @@
         if (!detections.length) {
             treatmentSummary.textContent = "아직 분석 결과가 없습니다.";
             treatmentTableBody.innerHTML =
-                '<tr class="cost-placeholder"><td colspan="4">분석 결과가 생기면 부위별 병명과 예상 치료비가 여기에 정리됩니다.</td></tr>';
+                '<tr class="cost-placeholder"><td colspan="4">분석 결과가 생기면 병변별 진료항목, 비용, 자기부담률이 여기에 정리됩니다.</td></tr>';
             treatmentTotal.textContent = "-";
             return;
         }
 
         let totalMin = 0;
         let totalMax = 0;
+        let pricedCount = 0;
+        const cards = [];
 
         const grouped = detections.reduce((acc, item) => {
-            const key = getDisplayName(item.class_name);
+            const key = getTreatmentOfficialName(item.class_name);
             acc[key] = (acc[key] || 0) + 1;
             return acc;
         }, {});
@@ -395,82 +625,253 @@
             .map(([name, count]) => `${name} ${count}건`)
             .join(" / ");
 
-        treatmentTableBody.innerHTML = detections
-            .map((item, index) => {
-                const info = classMap.get(item.class_name) || {};
-                const costMin = Number(info.cost_min);
-                const costMax = Number(info.cost_max);
-                if (Number.isFinite(costMin)) {
-                    totalMin += costMin;
-                }
-                if (Number.isFinite(costMax)) {
-                    totalMax += costMax;
-                }
+        detections.forEach((item, index) => {
+            const estimate = item.treatment_estimate || null;
+            const treatmentItems = estimate && Array.isArray(estimate.treatment_items)
+                ? estimate.treatment_items
+                : estimate && Array.isArray(estimate.items)
+                    ? estimate.items
+                    : [];
+            const lesionKey = `lesion-${index}`;
+            const lesionLabel = `#${index + 1} ${escapeHtml(getTreatmentDisplayName(item.class_name))}`;
 
-                return `
-                    <tr>
-                        <td>
-                            <strong>#${index + 1} ${escapeHtml(getAreaLabel(item.bbox_xyxy))}</strong>
-                            <div class="cost-cell-sub">bbox 중심 좌표 기준</div>
+            if (!treatmentItems.length) {
+                cards.push(`
+                    <tr class="lesion-card-row">
+                        <td colspan="4">
+                            <section class="lesion-card">
+                                <div class="lesion-card__header">
+                                    <strong class="lesion-card__title">${lesionLabel}</strong>
+                                </div>
+                                <div class="lesion-card__empty">저장된 공공 수가 정보가 없습니다. 치과 상담을 통해 확인하세요.</div>
+                            </section>
                         </td>
-                        <td>
-                            <strong>${escapeHtml(getDisplayName(item.class_name))}</strong>
-                            <div class="cost-cell-sub">${escapeHtml(fmtPercent(item.confidence))} 신뢰도</div>
-                        </td>
-                        <td>${escapeHtml(info.treatment || "치과 전문의 상담 필요")}</td>
-                        <td class="cost-amount">${escapeHtml(fmtRange(costMin, costMax))}</td>
                     </tr>
-                `;
-            })
-            .join("");
+                `);
+                return;
+            }
 
-        treatmentTotal.textContent = fmtRange(totalMin, totalMax);
+            const visibleItems = [];
+
+            treatmentItems.forEach((treatment, treatmentIndex) => {
+                const allOptions = Array.isArray(treatment.options) ? treatment.options : [];
+                const options = getFilteredOptions(allOptions);
+                const isFiltered = options !== allOptions;
+                const filteredPrices = options.map((o) => toFiniteNumber(o.price)).filter(Number.isFinite);
+                const allowFallbackPrice = !isCostFilterActive();
+                const itemMin = filteredPrices.length
+                    ? Math.min(...filteredPrices)
+                    : allowFallbackPrice
+                        ? toFiniteNumber(treatment.fee_min ?? treatment.price ?? treatment.unit_price)
+                        : NaN;
+                const itemMax = filteredPrices.length
+                    ? Math.max(...filteredPrices)
+                    : allowFallbackPrice
+                        ? toFiniteNumber(treatment.fee_max ?? treatment.price ?? treatment.unit_price)
+                        : NaN;
+                const lookupKeywords = Array.isArray(treatment.lookup_keywords)
+                    ? treatment.lookup_keywords.filter(Boolean)
+                    : [];
+                visibleItems.push({
+                    treatment,
+                    treatmentIndex,
+                    options,
+                    isFiltered,
+                    itemMin,
+                    itemMax,
+                    lookupKeywords,
+                });
+            });
+
+            const primaryItem = visibleItems[0] || null;
+            const scopedItems = state.treatmentScopeFilter === "primary_only" ? visibleItems.slice(0, 1) : visibleItems;
+            const followupItems = state.treatmentScopeFilter === "primary_only" ? [] : visibleItems.slice(1);
+            const followupToggleId = `${lesionKey}-followups`;
+            const followupExpanded = Boolean(state.expandedLesionCards[lesionKey]);
+            const routeLabel = estimate?.followup_display_label || item.followup_display_label || "";
+            const routeDescription = estimate?.followup_description || item.followup_description || "";
+
+            const renderTreatmentItem = (itemData, roleLabel, roleClass) => {
+                const { treatment, treatmentIndex, options, isFiltered, itemMin, itemMax, lookupKeywords } = itemData;
+                const lookupMarkup = lookupKeywords.length
+                    ? `<div class="treatment-lookup">HIRA 검색어: ${escapeHtml(lookupKeywords.join(", "))}</div>`
+                    : "";
+                const detailId = `${lesionKey}-detail-${treatmentIndex}`;
+                const hasOptions = options.length > 1;
+                return `
+                    <div class="lesion-treatment lesion-treatment--${roleClass}">
+                        <div class="lesion-treatment__role">${escapeHtml(roleLabel)}</div>
+                        <div class="lesion-treatment__body">
+                            <div class="lesion-treatment__copy">
+                                <strong class="lesion-treatment__name">${escapeHtml(
+                                    treatment.name || treatment.kor_nm || estimate.treatment_name || "치과 전문의 상담 필요"
+                                )}</strong>
+                                ${lookupMarkup}
+                            </div>
+                            <div class="lesion-treatment__meta">
+                                <div class="lesion-treatment__cost">${Number.isFinite(itemMin) || Number.isFinite(itemMax) ? escapeHtml(fmtRange(itemMin, itemMax)) : "-"}</div>
+                                <div class="lesion-treatment__copay">${escapeHtml(treatment.copay_rate || "미산정")}</div>
+                            </div>
+                        </div>
+                        ${hasOptions ? `
+                            <button class="treatment-toggle" type="button" data-target="${detailId}" aria-expanded="false" aria-label="세부 옵션 보기">
+                                <span class="toggle-label">${options.length}개 옵션${isFiltered ? " (필터)" : ""}</span>
+                                <svg class="toggle-icon" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                            <div id="${detailId}" class="treatment-options-panel">
+                                <div class="treatment-options-wrapper">
+                                    <div class="treatment-options-inner">
+                                        <div class="treatment-options">
+                                            ${options.map((option) => {
+                                                const optionPrice = toFiniteNumber(option.price);
+                                                const optionMeta = buildOptionMeta(option);
+                                                return `
+                                                    <div class="treatment-option">
+                                                        <div class="treatment-option__copy">
+                                                            <span>${escapeHtml(option.name || option.full_name || "세부 옵션")}</span>
+                                                            ${optionMeta ? `<small>${escapeHtml(optionMeta)}</small>` : ""}
+                                                        </div>
+                                                        <strong>${Number.isFinite(optionPrice) ? escapeHtml(fmtCurrency(optionPrice)) : "-"}</strong>
+                                                    </div>
+                                                `;
+                                            }).join("")}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ""}
+                    </div>
+                `;
+            };
+
+            const scopedMins = scopedItems.map((entry) => entry.itemMin).filter(Number.isFinite);
+            const scopedMaxes = scopedItems.map((entry) => entry.itemMax).filter(Number.isFinite);
+            const detMin = scopedMins.length ? Math.min(...scopedMins) : NaN;
+            const detMax = scopedMaxes.length ? Math.max(...scopedMaxes) : NaN;
+            if (Number.isFinite(detMin) || Number.isFinite(detMax)) {
+                pricedCount += 1;
+            }
+            if (Number.isFinite(detMin)) totalMin += detMin;
+            if (Number.isFinite(detMax)) totalMax += detMax;
+
+            cards.push(`
+                <tr class="lesion-card-row">
+                    <td colspan="4">
+                        <section class="lesion-card">
+                            <div class="lesion-card__header">
+                                <div>
+                                    <strong class="lesion-card__title">${lesionLabel}</strong>
+                                    <div class="lesion-card__summary">${Number.isFinite(detMin) || Number.isFinite(detMax) ? escapeHtml(fmtRange(detMin, detMax)) : "-"}</div>
+                                    ${routeLabel ? `
+                                        <div class="lesion-card__route">
+                                            <span class="lesion-route-chip">${escapeHtml(routeLabel)}</span>
+                                            ${routeDescription ? `<div class="lesion-card__route-copy">${escapeHtml(routeDescription)}</div>` : ""}
+                                        </div>
+                                    ` : ""}
+                                </div>
+                                ${followupItems.length ? `
+                                    <button class="lesion-followup-toggle${followupExpanded ? " is-open" : ""}" type="button" data-target="${followupToggleId}" aria-expanded="${followupExpanded ? "true" : "false"}">
+                                        <span>${followupExpanded ? "추가 진료항목 접기" : `추가 진료항목 ${followupItems.length}개 보기`}</span>
+                                        <svg class="toggle-icon" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </button>
+                                ` : ""}
+                            </div>
+                            <div class="lesion-card__items">
+                                ${primaryItem ? renderTreatmentItem(primaryItem, "대표 진료항목", "primary") : ""}
+                                ${followupItems.length ? `
+                                    <div id="${followupToggleId}" class="lesion-followups${followupExpanded ? " is-open" : ""}">
+                                        ${followupItems.map((itemData) => renderTreatmentItem(itemData, "추가 진료항목", "followup")).join("")}
+                                    </div>
+                                ` : ""}
+                            </div>
+                        </section>
+                    </td>
+                </tr>
+            `);
+        });
+
+        treatmentTableBody.innerHTML = cards.join("");
+
+        treatmentTotal.textContent = pricedCount ? fmtRange(totalMin, totalMax) : "-";
     };
 
     const buildSeverityChip = (detection) => {
-        const sevConf = Number(detection.severity_confidence);
-        if (!Number.isFinite(sevConf)) {
+        const lesionClassName = detection.class_name;
+        const severityClassName = detection.severity_class_name;
+        if (!severityClassName) {
             return "";
         }
-        const className = detection.class_name;
-        const probs = detection.severity_probabilities || {};
-        let label;
-        let chipClass;
-        if (className === "deep_caries") {
-            label = `심부 충치 의심 ${fmtPercent(sevConf)}`;
-            chipClass = "is-severe";
-        } else if (className === "caries") {
-            label = `초기/중기 충치 의심 ${fmtPercent(sevConf)}`;
-            chipClass = "is-mild";
-        } else {
-            const deepProb = Number(probs.deep_caries);
-            if (Number.isFinite(deepProb) && deepProb > 0.5) {
-                label = `심부 충치 가능성 ${fmtPercent(deepProb)}`;
-                chipClass = "is-severe";
-            } else {
-                label = `세부 분류 보류 (신뢰도 ${fmtPercent(sevConf)})`;
-                chipClass = "is-uncertain";
+        let label = "";
+        let chipClass = "is-uncertain";
+
+        if (PERIODONTAL_CLASS_NAMES.has(lesionClassName)) {
+            const stageLabel = PERIODONTAL_STAGE_LABELS[severityClassName];
+            if (!stageLabel) {
+                return `<span class="severity-chip ${chipClass}">치주 중증도 분류 보류</span>`;
             }
+            const lesionLabel = lesionClassName === "bone_loss" ? "치조골 소실" : "치근 이개부 병변";
+            label = `${stageLabel} ${lesionLabel}`;
+            chipClass = severityClassName === "severe" ? "is-severe" : severityClassName === "medium" ? "is-medium" : "is-mild";
+            return `<span class="severity-chip ${chipClass}">${escapeHtml(label)}</span>`;
         }
+
+        return "";
+    };
+
+    const buildFollowupChip = (detection) => {
+        if (detection.class_name !== "periapical_lesion") {
+            return "";
+        }
+        const label = detection.followup_display_label;
+        if (!label) {
+            return "";
+        }
+        const chipClass = detection.followup_source === "model" ? "is-route" : "is-route-default";
         return `<span class="severity-chip ${chipClass}">${escapeHtml(label)}</span>`;
+    };
+
+    const buildClassExplanationCard = (className, detectionCountForClass) => {
+        const info = getDisplayInfo(className);
+        if (!info || !info.patient_explanation) {
+            return "";
+        }
+
+        const officialName = getOfficialName(className);
+        const nextStepCopy = info.patient_next_step;
+        const countMarkup = detectionCountForClass
+            ? `<span class="class-explanation__count">\uD0D0\uC9C0 ${escapeHtml(String(detectionCountForClass))}\uAC74</span>`
+            : "";
+
+        return `
+            <section class="class-explanation">
+                <div class="class-explanation__header">
+                    <div class="class-explanation__eyebrow">\uBCD1\uBCC0\uBA85</div>
+                    <div class="class-explanation__title-row">
+                        <strong class="class-explanation__title">${escapeHtml(officialName)}</strong>
+                        ${countMarkup}
+                    </div>
+                </div>
+                <p class="class-explanation__body">${escapeHtml(info.patient_explanation)}</p>
+                ${nextStepCopy ? `<p class="patient-next-step">\uB2E4\uC74C \uB2E8\uACC4: ${escapeHtml(nextStepCopy)}</p>` : ""}
+            </section>
+        `;
     };
 
     const renderList = () => {
         if (!state.detections.length) {
             summaryStrip.textContent = "아직 분석 결과가 없습니다.";
             detectionList.innerHTML =
-                '<div class="placeholder-row">탐지 결과가 생기면 클래스와 신뢰도가 여기에 정리됩니다.</div>';
+                '<div class="placeholder-row">탐지 결과가 생기면 병변명과 위치 설명이 여기에 정리됩니다.</div>';
             detectionList.classList.remove("has-active");
-            detectionCount.textContent = "0";
-            topConfidence.textContent = "-";
+            detectionCount.textContent = "--";
             state.sortedDetections = [];
             state.activeIndex = null;
             renderTreatmentTable([]);
-            updateRevealControlsVisibility();
             updateRevealHandle();
             drawDetections();
             return;
         }
+        showResultSections();
 
         const sorted = [...state.detections].sort((a, b) => b.confidence - a.confidence);
         state.sortedDetections = sorted;
@@ -478,60 +879,67 @@
             state.activeIndex = null;
         }
         const grouped = sorted.reduce((acc, item) => {
-            const key = getDisplayName(item.class_name);
+            const key = getOfficialName(item.class_name);
             acc[key] = (acc[key] || 0) + 1;
             return acc;
         }, {});
 
         detectionCount.textContent = String(sorted.length);
-        topConfidence.textContent = fmtPercent(sorted[0].confidence);
         summaryStrip.textContent = Object.entries(grouped)
             .map(([name, count]) => `${name} ${count}건`)
             .join(" / ");
 
-        detectionList.innerHTML = sorted
-            .map((item, index) => {
-                const info = classMap.get(item.class_name) || {};
+        // 클래스별로 그룹화 (첫 등장 순서 유지)
+        const classGroups = new Map();
+        sorted.forEach((item, index) => {
+            const key = getVisualClassName(item.class_name);
+            if (!classGroups.has(key)) classGroups.set(key, []);
+            classGroups.get(key).push({ item, index });
+        });
+
+        const explanationCards = [];
+        const detectionRows = [];
+        for (const [className, entries] of classGroups.entries()) {
+            explanationCards.push(buildClassExplanationCard(className, entries.length));
+            /*
+
+            // 클래스 공통 설명 블록 (그룹 상단에 1회)
+                        ${nextStepCopy ? `<p class="patient-next-step">다음 단계: ${escapeHtml(nextStepCopy)}</p>` : ""}
+
+            // 해당 클래스의 탐지 행들
+            */
+            for (const { item, index } of entries) {
                 const severityChip = buildSeverityChip(item);
-                const explanation = info.patient_explanation
-                    ? `<div class="patient-explanation">${escapeHtml(info.patient_explanation)}</div>`
+                const followupChip = buildFollowupChip(item);
+                const officialName = getOfficialName(item.class_name);
+                const badgesMarkup = [severityChip, followupChip].filter(Boolean).join("");
+                const badges = badgesMarkup
+                    ? `<div class="detection-badges">${badgesMarkup}</div>`
                     : "";
-                const nextStep = info.patient_next_step
-                    ? `<div class="patient-next-step">다음 단계: ${escapeHtml(info.patient_next_step)}</div>`
-                    : "";
-                const badges = severityChip
-                    ? `<div class="detection-badges">${severityChip}</div>`
-                    : "";
-                return `
+                detectionRows.push(`
                     <div class="detection-row" data-index="${index}" role="button" tabindex="0">
                         <div class="detection-main">
-                            <span class="result-dot" style="background:${info.color || "#ffffff"};"></span>
+                            <span class="result-dot" style="background:${getClassColor(item.class_name)};"></span>
                             <div>
-                                <strong>${index + 1}. ${escapeHtml(getDisplayName(item.class_name))}</strong>
+                                <strong>${index + 1}. ${escapeHtml(officialName)}</strong>
                                 <div class="detection-meta">부위: ${escapeHtml(getAreaLabel(item.bbox_xyxy))}</div>
                                 ${badges}
-                                ${explanation}
-                                ${nextStep}
                             </div>
                         </div>
-                        <div class="detection-score">${escapeHtml(fmtPercent(item.confidence))}</div>
                     </div>
-                `;
-            })
-            .join("");
+                `);
+            }
+        }
+        detectionList.innerHTML = `${explanationCards.join("")}${detectionRows.join("")}`;
 
         updateActiveHighlight();
         renderTreatmentTable(sorted);
-        updateRevealControlsVisibility();
         updateRevealHandle();
         drawDetections();
     };
 
     const resetRevealToFull = () => {
         state.revealRatio = 1;
-        if (revealSlider) {
-            revealSlider.value = "100";
-        }
     };
 
     const setFile = (file) => {
@@ -545,6 +953,7 @@
         state.detections = [];
         state.sortedDetections = [];
         state.activeIndex = null;
+        state.expandedLesionCards = {};
         resetRevealToFull();
 
         fileName.textContent = file.name;
@@ -561,6 +970,7 @@
         state.detections = [];
         state.sortedDetections = [];
         state.activeIndex = null;
+        state.expandedLesionCards = {};
         resetRevealToFull();
         fileInput.value = "";
         previewImage.removeAttribute("src");
@@ -568,6 +978,7 @@
         fileSize.textContent = "-";
         updateViewerVisibility();
         renderList();
+        hideResultSections();
         setStages(null);
         setStatus("업로드 후 분석을 실행하면 탐지 결과가 오른쪽 뷰어와 아래 목록에 반영됩니다.");
     };
@@ -602,7 +1013,7 @@
             }, 600);
 
             const response = await fetchPromise;
-            setStatus("탐지된 부위의 심각도를 분석 중입니다.", "busy");
+            setStatus("탐지된 부위의 후속 진료 정보와 치주 단계를 정리 중입니다.", "busy");
             setStages("refine");
             const contentType = response.headers.get("content-type") || "";
             const rawBody = await response.text();
@@ -614,40 +1025,26 @@
                 throw new Error(payload.error || "Prediction request failed");
             }
 
-            const roundTripMs = Math.round(performance.now() - clientStarted);
-            const serverInfer =
-                typeof payload.inference_ms === "number" && Number.isFinite(payload.inference_ms)
-                    ? payload.inference_ms
-                    : null;
-            const serverTotal =
-                typeof payload.server_total_ms === "number" && Number.isFinite(payload.server_total_ms)
-                    ? payload.server_total_ms
-                    : null;
-            let timingNote = ` 왕복 ${roundTripMs}ms`;
-            if (serverTotal != null && serverInfer != null) {
-                timingNote = ` 서버 ${serverTotal}ms(모델 ${serverInfer}ms) / 왕복 ${roundTripMs}ms`;
-            } else if (serverInfer != null) {
-                timingNote = ` 서버 추론 ${serverInfer}ms / 왕복 ${roundTripMs}ms`;
-            }
-
             state.detections = Array.isArray(payload.detections) ? payload.detections : [];
             state.activeIndex = null;
+            state.expandedLesionCards = {};
             resetRevealToFull();
             setStages("render");
             renderList();
 
             if (state.detections.length) {
                 setStatus(
-                    `분석이 완료되었습니다. ${state.detections.length}개의 의심 부위를 시각화했습니다.${timingNote}`,
+                    `분석이 완료되었습니다. ${state.detections.length}개의 의심 부위를 시각화했습니다.`,
                 );
             } else {
                 setStatus(
-                    `분석이 완료되었습니다. 현재 기준에서는 탐지된 의심 부위가 없습니다.${timingNote}`,
+                    "분석이 완료되었습니다. 현재 기준에서는 탐지된 의심 부위가 없습니다.",
                 );
             }
             window.setTimeout(() => setStages(null), 1200);
         } catch (error) {
             state.detections = [];
+            state.expandedLesionCards = {};
             renderList();
             setStatus(`분석 실패: ${error.message}`, "error");
             setStages(null);
@@ -662,12 +1059,32 @@
     });
     window.addEventListener("resize", resizeCanvas);
 
-    if (revealSlider) {
-        revealSlider.addEventListener("input", (event) => {
-            const raw = Number(event.target.value);
-            state.revealRatio = Number.isFinite(raw) ? Math.max(0, Math.min(1, raw / 100)) : 1;
+    if (revealHandle) {
+        let revealDragging = false;
+
+        revealHandle.addEventListener("pointerdown", (event) => {
+            revealDragging = true;
+            revealHandle.setPointerCapture(event.pointerId);
+            event.preventDefault();
+        });
+
+        revealHandle.addEventListener("pointermove", (event) => {
+            if (!revealDragging) {
+                return;
+            }
+            const rect = previewImage.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            state.revealRatio = Math.max(0, Math.min(1, x / rect.width));
             drawDetections();
             updateRevealHandle();
+        });
+
+        revealHandle.addEventListener("pointerup", () => {
+            revealDragging = false;
+        });
+
+        revealHandle.addEventListener("pointercancel", () => {
+            revealDragging = false;
         });
     }
 
@@ -702,6 +1119,45 @@
         const idx = Number(row.dataset.index);
         const next = state.activeIndex === idx ? null : idx;
         setActiveDetection(next);
+    });
+
+    treatmentTableBody.addEventListener("click", (event) => {
+        const followupButton = event.target.closest(".lesion-followup-toggle");
+        if (followupButton) {
+            const targetId = followupButton.dataset.target;
+            const followupPanel = targetId ? document.getElementById(targetId) : null;
+            if (!followupPanel) {
+                return;
+            }
+            const expand = !followupPanel.classList.contains("is-open");
+            followupPanel.classList.toggle("is-open", expand);
+            followupButton.classList.toggle("is-open", expand);
+            followupButton.setAttribute("aria-expanded", expand ? "true" : "false");
+            const match = targetId.match(/^(lesion-\d+)-followups$/);
+            if (match) {
+                state.expandedLesionCards[match[1]] = expand;
+            }
+            const label = followupButton.querySelector("span");
+            if (label) {
+                const count = followupPanel.querySelectorAll(".lesion-treatment--followup").length;
+                label.textContent = expand ? "추가 진료항목 접기" : `추가 진료항목 ${count}개 보기`;
+            }
+            return;
+        }
+
+        const button = event.target.closest(".treatment-toggle");
+        if (!button) {
+            return;
+        }
+        const targetId = button.dataset.target;
+        const detailsPanel = targetId ? document.getElementById(targetId) : null;
+        if (!detailsPanel) {
+            return;
+        }
+        const expand = !detailsPanel.classList.contains("is-open");
+        detailsPanel.classList.toggle("is-open", expand);
+        button.classList.toggle("is-open", expand);
+        button.setAttribute("aria-expanded", expand ? "true" : "false");
     });
 
     fileInput.addEventListener("click", () => {
@@ -739,6 +1195,44 @@
     });
 
     resetButton.addEventListener("click", resetAll);
+
+    const filterBar = document.getElementById("cost-filter-bar");
+    const filterHint = document.getElementById("filter-hint");
+    if (filterBar) {
+        filterBar.addEventListener("click", (event) => {
+            const pill = event.target.closest(".filter-pill");
+            if (!pill) {
+                return;
+            }
+            const filterType = pill.dataset.filter;
+            const filterValue = pill.dataset.value;
+            if (filterType === "hospital") {
+                state.hospitalFilter = filterValue;
+                filterBar.querySelectorAll('[data-filter="hospital"]').forEach((p) => {
+                    p.classList.toggle("is-active", p.dataset.value === filterValue);
+                });
+            } else if (filterType === "surgery") {
+                state.surgeryFilter = filterValue;
+                filterBar.querySelectorAll('[data-filter="surgery"]').forEach((p) => {
+                    p.classList.toggle("is-active", p.dataset.value === filterValue);
+                });
+            } else if (filterType === "disability") {
+                state.disabilityFilter = filterValue;
+                filterBar.querySelectorAll('[data-filter="disability"]').forEach((p) => {
+                    p.classList.toggle("is-active", p.dataset.value === filterValue);
+                });
+            } else if (filterType === "treatment-scope") {
+                state.treatmentScopeFilter = filterValue;
+                filterBar.querySelectorAll('[data-filter="treatment-scope"]').forEach((p) => {
+                    p.classList.toggle("is-active", p.dataset.value === filterValue);
+                });
+            }
+            updateFilterHint();
+            renderTreatmentTable(state.sortedDetections);
+        });
+    }
+
+    updateFilterHint();
 
     renderLegend();
     updateViewerVisibility();

@@ -5,28 +5,119 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dental AI Detection Studio</title>
-    <link rel="stylesheet" href="{% static 'classifier/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'classifier/dashboard.css' %}?v=landing-redesign-20260610">
 </head>
 <body>
+    <svg style="display:none" aria-hidden="true">
+        <defs>
+            <g id="icon-shield" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3 4 6v5c0 4.6 3.2 8.7 8 10 4.8-1.3 8-5.4 8-10V6l-8-3Z"/><path d="M8.5 12.2l2.3 2.3 4.5-4.7"/>
+            </g>
+            <g id="icon-arrow" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+            </g>
+        </defs>
+    </svg>
+
     <div class="page-shell">
-        <header class="hero">
-            <div class="hero-copy">
-                <p class="eyebrow">Dental X-ray Detection Service</p>
-                <h1>파노라마 X-ray 기반 치과 질환 의심 부위를 한 화면에서 분석합니다.</h1>
-                <p class="hero-text">
-                    업로드한 이미지를 즉시 시각화하고 의심 박스와 결과 목록을 함께 보여주는
-                    설명 가능한 2차 의견 인터페이스입니다.
-                </p>
-                <div class="hero-actions">
-                    <a class="button button-primary" href="#workspace">분석 시작</a>
+        <header class="site-header">
+            <a class="brand" href="#top">
+                <span class="brand-mark">
+                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-shield"/></svg>
+                </span>
+                Dental AI Detection Studio
+            </a>
+            <ul class="nav-links">
+                <li><a href="#how-it-works">이용 방법</a></li>
+                <li><a href="#workspace">분석 시작</a></li>
+                <li><a href="#trust">신뢰 정보</a></li>
+            </ul>
+            <a class="button button-primary nav-cta" href="#workspace">분석 시작</a>
+        </header>
+
+        <header class="hero" id="top">
+            <p class="eyebrow">이미 촬영한 X-ray로 받는 무료 2차 소견</p>
+            <h1 class="headline">AI로 <span class="accent">2차 소견</span>을<br>확인해보세요</h1>
+
+            <div class="hero-row">
+                <div>
+                    <p class="hero-sub">
+                        치과에서 안내받은 진단과 치료 계획을, 가지고 계신 파노라마 X-ray로 한 번 더 확인해보세요.
+                        AI가 의심 부위에 박스를 표시하고, 병변별 예상 치료 항목과 건강보험 수가 기준 비용 범위를
+                        독립적으로 제시합니다. 최종 결정은 치과 전문의와 다시 상의하세요.
+                    </p>
+                    <div class="hero-cta-row">
+                        <a class="button button-primary" href="#workspace">
+                            무료로 분석 시작하기
+                            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-arrow"/></svg>
+                        </a>
+                        <a class="button button-ghost" href="#how-it-works">이용 방법 보기</a>
+                    </div>
+                </div>
+                <div>
+                    <p class="spec-label">At a glance</p>
+                    <ul class="spec-list">
+                        <li><span>탐지 가능 질환</span><strong>12종+</strong></li>
+                        <li><span>평균 분석 시간</span><strong>약 3초</strong></li>
+                        <li><span>치료비 산정 기준</span><strong>건강보험 수가</strong></li>
+                        <li><span>업로드 이미지</span><strong>분석 후 자동 폐기</strong></li>
+                    </ul>
                 </div>
             </div>
+
+            <div class="figure">
+                <p class="figure-meta">Analysis complete · 0.8s · 3 detections</p>
+                <div class="lightbox-panel">
+                    <div class="film-strip">
+                        <span class="bracket" style="--x:6%; --y:18%; --w:20%; --h:55%;">
+                            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                            <span class="bracket-label">충치 의심 · 92%</span>
+                        </span>
+                        <span class="bracket is-orange" style="--x:48%; --y:35%; --w:22%; --h:50%;">
+                            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                            <span class="bracket-label">치주염 의심 · 78%</span>
+                        </span>
+                        <span class="bracket" style="--x:76%; --y:10%; --w:14%; --h:35%;">
+                            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                            <span class="bracket-label label-right">치아 마모 의심 · 85%</span>
+                        </span>
+                    </div>
+                </div>
+                <p class="figure-caption">Fig. 01 — AI 탐지 결과 예시 · 예상 치료비 <strong>8 ~ 15만원</strong></p>
+            </div>
         </header>
+
+        <section class="section" id="how-it-works">
+            <div class="section-head">
+                <div>
+                    <p class="section-kicker">이용 방법</p>
+                    <h2>3단계면 충분합니다</h2>
+                </div>
+                <p class="section-note">이미지를 올리는 순간부터 결과 확인까지, 별도 가입 없이 바로 진행할 수 있습니다.</p>
+            </div>
+            <div class="timeline">
+                <div class="timeline-step">
+                    <span class="timeline-dot">01</span>
+                    <h3>이미지 업로드</h3>
+                    <p>파노라마 X-ray를 끌어다 놓거나 클릭해서 선택하세요. PNG, JPG, WEBP 형식을 지원합니다.</p>
+                </div>
+                <div class="timeline-step">
+                    <span class="timeline-dot">02</span>
+                    <h3>AI 탐지 · 분류</h3>
+                    <p>딥러닝 모델이 의심 부위에 박스를 표시하고, 병변 종류와 심각도를 자동으로 분류합니다.</p>
+                </div>
+                <div class="timeline-step">
+                    <span class="timeline-dot">03</span>
+                    <h3>결과 + 치료비 확인</h3>
+                    <p>탐지된 병변 목록과 건강보험 수가 기준 예상 치료비를 표로 한눈에 확인할 수 있습니다.</p>
+                </div>
+            </div>
+        </section>
 
         <main id="workspace" class="workspace">
             <section class="upload-card">
                 <div class="section-heading">
-                    <p class="section-kicker">Analysis Console</p>
+                    <p class="section-kicker">분석 콘솔</p>
                     <h2>이미지 업로드</h2>
                     <p>X-ray 이미지를 올리면 브라우저에서 미리보기와 탐지 결과를 함께 확인합니다.</p>
                 </div>
@@ -34,6 +125,10 @@
                 <form id="predict-form" class="upload-form">
                     <label id="dropzone" class="dropzone" for="image-input">
                         <input id="image-input" name="image" type="file" accept="image/png,image/jpeg,image/jpg,image/webp">
+                        <svg class="dropzone-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M12 15V3m0 0L8 7m4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M3 17v1a3 3 0 003 3h12a3 3 0 003-3v-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
                         <span class="dropzone-title">이미지를 끌어놓거나 클릭해서 선택</span>
                         <span class="dropzone-subtitle">PNG, JPG, WEBP 지원</span>
                     </label>
@@ -67,49 +162,41 @@
                     </ol>
                 </div>
 
-                <div class="notice-card">
-                    <span class="notice-badge">Notice</span>
-                    <p>
-                        본 서비스는 의료 진단 확정 도구가 아니라 의사결정 보조용 인터페이스입니다.
-                        최종 판단은 치과 전문의 상담이 필요합니다.
-                    </p>
-                </div>
             </section>
 
             <section class="viewer-card">
                 <div class="viewer-header">
                     <div>
-                        <p class="section-kicker">Explainable Output</p>
+                        <p class="section-kicker">시각화 결과</p>
                         <h2>탐지 결과 시각화</h2>
                     </div>
                     <div class="viewer-stats">
                         <span class="mini-stat">
                             <small>Detections</small>
-                            <strong id="detection-count">0</strong>
-                        </span>
-                        <span class="mini-stat">
-                            <small>Top Confidence</small>
-                            <strong id="top-confidence">-</strong>
+                            <strong id="detection-count">--</strong>
                         </span>
                     </div>
                 </div>
 
                 <div class="viewer-stage">
                     <div id="viewer-empty" class="viewer-empty">
-                        <p>선택한 이미지를 여기에서 미리 봅니다.</p>
-                        <small>분석 후에는 bbox와 클래스 색상이 이 영역에 오버레이됩니다.</small>
+                        <svg class="viewer-empty-icon" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <rect x="6" y="10" width="44" height="36" rx="4" stroke="currentColor" stroke-width="2"/>
+                            <line x1="6" y1="20" x2="50" y2="20" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 4" opacity="0.45"/>
+                            <line x1="6" y1="36" x2="50" y2="36" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 4" opacity="0.45"/>
+                            <line x1="20" y1="10" x2="20" y2="46" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 4" opacity="0.45"/>
+                            <line x1="36" y1="10" x2="36" y2="46" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 4" opacity="0.45"/>
+                            <circle cx="28" cy="28" r="7" stroke="currentColor" stroke-width="1.8" opacity="0.65"/>
+                            <circle cx="28" cy="28" r="2.5" fill="currentColor" opacity="0.5"/>
+                        </svg>
+                        <p>좌측에서 X-ray 이미지를 선택하세요.</p>
+                        <small>분석 후 bbox와 클래스 색상이 오버레이됩니다.</small>
                     </div>
                     <div id="viewer-media" class="viewer-media is-hidden">
                         <img id="preview-image" alt="Uploaded dental x-ray preview">
                         <canvas id="overlay-canvas"></canvas>
                         <div id="reveal-handle" class="reveal-handle" aria-hidden="true"></div>
                     </div>
-                </div>
-                <div id="reveal-controls" class="reveal-controls is-hidden">
-                    <span class="reveal-label">원본</span>
-                    <input id="reveal-slider" class="reveal-slider" type="range" min="0" max="100" value="100"
-                           aria-label="원본과 AI 분석 결과 비교 슬라이더">
-                    <span class="reveal-label">AI 분석</span>
                 </div>
                 <div class="legend-block">
                     <p class="legend-title">클래스 색상 안내</p>
@@ -118,54 +205,89 @@
             </section>
         </main>
 
-        <aside class="results-disclaimer" role="note">
+        <aside class="results-disclaimer is-hidden" role="note">
             <span class="results-disclaimer-badge">참고</span>
             <p>
                 본 결과는 의료 진단을 대체하지 않습니다. 최종 진단과 치료 결정은 반드시 치과 전문의 상담을 통해 확인해 주세요.
             </p>
         </aside>
 
-        <section class="insight-grid">
+        <section class="insight-grid is-hidden">
             <article class="result-card">
                 <div class="section-heading compact">
-                    <p class="section-kicker">Detection Summary</p>
+                    <p class="section-kicker">탐지 요약</p>
                     <h2>탐지 목록</h2>
                 </div>
                 <div id="summary-strip" class="summary-strip">
                     아직 분석 결과가 없습니다.
                 </div>
-                <p class="estimate-caption">신뢰도(%)는 AI가 해당 병변을 그 클래스로 판단한 상대적 확신 정도를 뜻합니다.</p>
                 <div id="detection-list" class="detection-list">
-                    <div class="placeholder-row">탐지 결과가 생기면 클래스와 신뢰도가 여기에 정리됩니다.</div>
+                    <div class="placeholder-row">탐지 결과가 생기면 병변명과 위치 설명이 여기에 정리됩니다.</div>
                 </div>
             </article>
         </section>
 
-        <section class="treatment-section">
+        <section class="treatment-section is-hidden">
             <article class="future-card future-card-wide">
                 <div class="section-heading compact">
-                    <p class="section-kicker">Treatment Estimate</p>
+                    <p class="section-kicker">치료비 안내</p>
                     <h2>치료비 추정</h2>
                 </div>
                 <p class="estimate-note">
                     탐지된 위치와 질환 클래스를 기준으로 예상 치료 항목과 비용 범위를 표 형태로 정리합니다.
+                    야간, 토요, 공휴일 진료는 추가 비용이 청구될 수 있습니다.
                 </p>
                 <div id="treatment-summary" class="summary-strip treatment-summary">
                     아직 분석 결과가 없습니다.
+                </div>
+                <div class="cost-filter-bar" id="cost-filter-bar">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <span class="filter-label">의료기관</span>
+                            <div class="filter-pills" role="group" aria-label="의료기관 유형 선택">
+                                <button class="filter-pill is-active" data-filter="hospital" data-value="clinic">치과의원</button>
+                                <button class="filter-pill" data-filter="hospital" data-value="general">종합병원·상급종합</button>
+                                <button class="filter-pill" data-filter="hospital" data-value="dental_univ">치과대학병원</button>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">수술방식</span>
+                            <div class="filter-pills" role="group" aria-label="수술 방식 선택">
+                                <button class="filter-pill" data-filter="surgery" data-value="all">전체</button>
+                                <button class="filter-pill is-active" data-filter="surgery" data-value="primary">단독 시술</button>
+                                <button class="filter-pill" data-filter="surgery" data-value="secondary">동시 수술 (제2)</button>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">표시항목</span>
+                            <div class="filter-pills" role="group" aria-label="진료항목 표시 선택">
+                                <button class="filter-pill is-active" data-filter="treatment-scope" data-value="all">전체</button>
+                                <button class="filter-pill" data-filter="treatment-scope" data-value="primary_only">대표진료항목만</button>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">장애인 가산</span>
+                            <div class="filter-pills" role="group" aria-label="장애인 가산 여부 선택">
+                                <button class="filter-pill is-active" data-filter="disability" data-value="general">일반</button>
+                                <button class="filter-pill" data-filter="disability" data-value="disabled">장애인 가산</button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="filter-hint" id="filter-hint">장애인 가산이 명시되지 않은 일반 옵션만 표시합니다.</p>
                 </div>
                 <div class="cost-table-wrap">
                     <table class="cost-table">
                         <thead>
                             <tr>
-                                <th>부위</th>
-                                <th>병명</th>
-                                <th>예상 치료</th>
-                                <th>예상 비용</th>
+                                <th>병변</th>
+                                <th>진료항목</th>
+                                <th>비용</th>
+                                <th>자기부담률</th>
                             </tr>
                         </thead>
                         <tbody id="treatment-table-body">
                             <tr class="cost-placeholder">
-                                <td colspan="4">분석 결과가 생기면 부위별 병명과 예상 치료비가 여기에 정리됩니다.</td>
+                                <td colspan="4">분석 결과가 생기면 병변별 진료항목, 비용, 자기부담률이 여기에 정리됩니다.</td>
                             </tr>
                         </tbody>
                         <tfoot>
@@ -179,9 +301,65 @@
                 <p class="estimate-caption">실제 진료비는 병원, 재료, 난이도에 따라 달라질 수 있습니다.</p>
             </article>
         </section>
+
+        <section class="section" id="trust">
+            <div class="trust-grid">
+                <div class="trust-intro">
+                    <p class="section-kicker">신뢰할 수 있는 이유</p>
+                    <h2>설명 가능하고, 투명하며,<br>전문가와 연결됩니다</h2>
+                    <p class="section-note" style="max-width: 40ch;">
+                        의료 정보는 근거가 보여야 신뢰할 수 있습니다.
+                        모든 판단 근거와 비용 산정 기준을 그대로 공개합니다.
+                    </p>
+                </div>
+                <ul class="trust-list">
+                    <li>
+                        <span class="trust-num">01</span>
+                        <div>
+                            <h3>설명 가능한 AI</h3>
+                            <p>박스와 신뢰도 점수를 그대로 보여줘, AI가 무엇을 보고 어떻게 판단했는지 직접 확인할 수 있습니다.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="trust-num">02</span>
+                        <div>
+                            <h3>투명한 치료비 안내</h3>
+                            <p>건강보험심사평가원 수가 기준 정보로 산출한 예상 치료 항목과 비용 범위를 표로 제공합니다.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="trust-num">03</span>
+                        <div>
+                            <h3>전문의 상담 연계</h3>
+                            <p>본 결과는 참고용 2차 소견입니다. 최종 진단과 치료 결정은 반드시 치과 전문의와 상담해 주세요.</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="cta-band">
+            <div>
+                <h2>지금 바로 X-ray를 업로드하고<br>결과를 확인해보세요</h2>
+                <p>회원가입 없이, 무료로 바로 이용할 수 있습니다.</p>
+            </div>
+            <a class="button button-on-teal" href="#workspace">무료로 분석 시작하기</a>
+        </section>
+
+        <footer>
+            <p class="disclaimer">
+                본 결과는 의료 진단을 대체하지 않습니다. 최종 진단과 치료 결정은 반드시
+                치과 전문의 상담을 통해 확인해 주세요. © 2026 Dental AI Detection Studio
+            </p>
+            <div class="footer-links">
+                <a href="#">이용약관</a>
+                <a href="#">개인정보처리방침</a>
+                <a href="#">문의하기</a>
+            </div>
+        </footer>
     </div>
 
     {{ class_info|json_script:"class-info-data" }}
-    <script src="{% static 'classifier/dashboard.js' %}" defer></script>
+    <script src="{% static 'classifier/dashboard.js' %}?v=landing-redesign-20260610" defer></script>
 </body>
 </html>
