@@ -159,9 +159,9 @@ graph LR
 - 기본 학습 흐름: 주요 병변 detector와 치주 detector를 분리해 학습
 - 주요 병변 detection 데이터 구성: `cyst`와 치주 클래스를 제외한 4-class YOLO dataset
 - 현재 서빙 main detector 재학습 흐름: `data/detection_main_4class_no_cyst_no_periodontal`에 소아 파생 4-class 셋 `data/detection_kaggle_pediatric_selected_4class`를 병합한 `data/detection_main_4class_with_pediatric`로 fine-tuning
-- 현재 서빙 main detector checkpoint: `artifacts/detection/serve/best.pt`이며, 2026-06-03 기준 `artifacts/detection/yolov8s_serve_pediatric_ft_v1/weights/best.pt` 승격본을 사용
+- 현재 서빙 main detector checkpoint: `artifacts/detection/serve/dental_4class_detection_best.pt`이며, 2026-06-03 기준 `artifacts/detection/yolov8s_serve_pediatric_ft_v1/weights/best.pt` 승격본을 사용
 - 치주 detection 데이터 구성: PDCNN bone-loss/furcation COCO annotation에서 파생한 2-class YOLO dataset에 진짜 음성 이미지를 background로 추가한 `data/detection_periodontal_pdcnn_2class_bg`
-- 현재 서빙 치주 detector checkpoint: `artifacts/detection/serve/periodontal_best.pt`이며, 2026-06-11 기준 background 음성 보강 재학습본(`yolov8s_periodontal_2class_bg_img640/run01`) 승격본을 사용
+- 현재 서빙 치주 detector checkpoint: `artifacts/detection/serve/periodontal_2class_detection_best.pt`이며, 2026-06-11 기준 background 음성 보강 재학습본(`yolov8s_periodontal_2class_bg_img640/run01`) 승격본을 사용
 - 기본 detection backbone: YOLOv8s
 - 기본 초기화 방식: 기존 dental YOLOv8s checkpoint를 fine-tuning 초기값으로 사용하고, class head mismatch는 재초기화 허용
 - 주요 병변 historical baseline 설정: `epochs=80`, `imgsz=640`, `batch=8`, `workers=0`, `patience=15`
@@ -179,19 +179,19 @@ crop해 `bone_loss`는 `mild/medium/severe` 3단계, `furcation_involvement`는 
 
 | 원본 소스 | 정확한 데이터셋명 / 원본 URL | 로컬 raw 경로 | 현재 프로젝트 내 주요 파생/기여 데이터셋 |
 | --- | --- | --- | --- |
-| DENTEX | `DENTEX` / https://huggingface.co/datasets/LUNA0206/DENTEX | `data/raw/dentex` | `data/detection_hierarchical`, `data/detection_hierarchical_rectseg`, `data/detection_main_4class_no_cyst_no_periodontal`, `data/detection_hierarchical_zenodo_*`, `data/detection_hierarchical_zenodo_kaggle_*` |
+| DENTEX | `DENTEX` / https://huggingface.co/datasets/LUNA0206/DENTEX | `data/raw/dentex` | `data/detection_hierarchical`, `data/detection_main_4class_no_cyst_no_periodontal`, `data/detection_hierarchical_zenodo_*`, `data/detection_hierarchical_zenodo_kaggle_*` |
 | CariesXrays | `AAAI2024_CariesXrays` / https://github.com/Binz-Chen/AAAI2024_CariesXrays | `data/raw/cariesxrays` | 충치 계열이 `data/detection_hierarchical*`, `data/detection_main_4class_no_cyst_no_periodontal`, `data/detection_hierarchical_zenodo_*`, `data/detection_hierarchical_zenodo_kaggle_*`에 병합 기여 |
-| UMFIH | `Dataset for automating dental condition detection on panoramic radiographs` / https://zenodo.org/records/15487430 | `data/raw/umfih` | `data/detection_merged_umfih`, 이후 `data/detection_hierarchical*` 계열에 간접 기여 |
-| Adult Kaggle panoramic | `Dental X-Ray Panoramic Dataset` / https://www.kaggle.com/datasets/lokisilvres/dental-disease-panoramic-detection-dataset | `data/raw/kaggle/dental_disease_panoramic_detection` | `data/detection_kaggle_6class_auto`, `data/detection_kaggle_6class_plus_cyst_v2`, `data/detection_hierarchical_zenodo_kaggle_6class_auto_v2`, `data/detection_hierarchical_zenodo_kaggle_6class_auto_v3` |
+| UMFIH | `Dataset for automating dental condition detection on panoramic radiographs` / https://zenodo.org/records/15487430 | `data/raw/zenodo/panoramic_radiography_yolo_dataset_14_classes` | `data/detection_merged_umfih`, 이후 `data/detection_hierarchical*` 계열에 간접 기여 |
+| Adult Kaggle panoramic | `Dental X-Ray Panoramic Dataset` / https://www.kaggle.com/datasets/lokisilvres/dental-disease-panoramic-detection-dataset | `data/raw/kaggle/dental_disease_panoramic_detection` | `data/detection_kaggle_6class_auto`, `data/detection_kaggle_6class_plus_cyst_v2`, `data/detection_hierarchical_zenodo_kaggle_6class_auto_v3` |
 | Pediatric Kaggle panoramic | `Children's Dental Panoramic Radiographs Dataset` / https://www.kaggle.com/datasets/truthisneverlinear/childrens-dental-panoramic-radiographs-dataset | `data/raw/kaggle/archive_4_bundle` | `data/detection_kaggle_pediatric_selected_6class`, `data/detection_kaggle_pediatric_selected_4class`, `data/detection_main_4class_with_pediatric` |
-| PDCNN periodontal | `PDCNN: Automatic PBL diagnosis` / https://github.com/PuckBlink/PDCNN and `Periodontitis Bone Loss Detection in Panoramic Radiographs using modified YOLOv7` / https://zenodo.org/records/15565284 | `data/raw/pdcnn_periodontitis_bone_loss` | `data/detection_periodontal_pdcnn_2class`, `data/detection_pdcnn_bone_loss_v4`, `data/severity_periodontal` |
+| PDCNN periodontal | `PDCNN: Automatic PBL diagnosis` / https://github.com/PuckBlink/PDCNN and `Periodontitis Bone Loss Detection in Panoramic Radiographs using modified YOLOv7` / https://zenodo.org/records/15565284 | `data/raw/pdcnn_periodontitis_bone_loss` | `data/detection_periodontal_pdcnn_2class_bg`, `data/detection_pdcnn_bone_loss_v4`, `data/severity_periodontal` |
 
 ### 3.1 DENTEX
 
 - 정확한 원본명: `DENTEX`
 - 원본 URL: https://huggingface.co/datasets/LUNA0206/DENTEX
 - 로컬 raw 경로: `data/raw/dentex`
-- 현재 프로젝트 내 주요 파생/기여 데이터셋: `data/detection_hierarchical`, `data/detection_hierarchical_rectseg`, `data/detection_main_4class_no_cyst_no_periodontal`, `data/detection_hierarchical_zenodo_*`, `data/detection_hierarchical_zenodo_kaggle_*`
+- 현재 프로젝트 내 주요 파생/기여 데이터셋: `data/detection_hierarchical`, `data/detection_main_4class_no_cyst_no_periodontal`, `data/detection_hierarchical_zenodo_*`, `data/detection_hierarchical_zenodo_kaggle_*`
 - 용도: 기본 치과 X-ray detection 라벨 소스
 - 원본 구조: JSON annotation 기반
 - 프로젝트 내 역할:
@@ -231,7 +231,7 @@ crop해 `bone_loss`는 `mild/medium/severe` 3단계, `furcation_involvement`는 
 
 - 정확한 원본명: `Dataset for automating dental condition detection on panoramic radiographs`
 - 원본 URL: https://zenodo.org/records/15487430
-- 로컬 raw 경로: `data/raw/umfih`
+- 로컬 raw 경로: `data/raw/zenodo/panoramic_radiography_yolo_dataset_14_classes` (다운로드/변환 스크립트 기본값은 `data/raw/umfih/extracted`이나, 실제 데이터는 `zenodo/` 아래에 위치)
 - 현재 프로젝트 내 주요 파생/기여 데이터셋: `data/detection_merged_umfih`, 이후 `data/detection_hierarchical*` 계열에 간접 기여
 - 용도: 추가 병변 데이터 보강
 - 원본 구조: YOLO format
@@ -305,7 +305,7 @@ historical hierarchical baseline 데이터셋:
 치주 severity 분류용 crop 데이터셋은 PDCNN 2-class detection 데이터셋의 `periodontal_bbox_manifest.csv`에
 보존된 원본 severity 라벨로부터 생성한다.
 
-- 준비 스크립트: `scripts/prepare_periodontal_severity_dataset.py`
+- 준비 스크립트: `scripts/data/prepare_periodontal_severity_dataset.py`
 - 출력 경로: `data/severity_periodontal/{bone_loss,furcation_involvement}`
 - crop margin 기본값: `0.15`
 - `bone_loss` 클래스: `mild` / `medium` / `severe`
@@ -327,7 +327,7 @@ split 규모 (stats.json 기준):
 - 정확한 원본명: `Dental X-Ray Panoramic Dataset`
 - 원본 URL: https://www.kaggle.com/datasets/lokisilvres/dental-disease-panoramic-detection-dataset
 - 로컬 raw 경로: `data/raw/kaggle/dental_disease_panoramic_detection`
-- 현재 프로젝트 내 주요 파생 데이터셋: `data/detection_kaggle_6class_auto`, `data/detection_kaggle_6class_plus_cyst_v2`, `data/detection_hierarchical_zenodo_kaggle_6class_auto_v2`, `data/detection_hierarchical_zenodo_kaggle_6class_auto_v3`
+- 현재 프로젝트 내 주요 파생 데이터셋: `data/detection_kaggle_6class_auto`, `data/detection_kaggle_6class_plus_cyst_v2`, `data/detection_hierarchical_zenodo_kaggle_6class_auto_v3`
 
 지원 병변 범위를 넓히기 위해 Kaggle/Roboflow 계열 dental panoramic YOLO 데이터를 추가로 사용한다. 현재 주요
 병변 detector에는 치주 클래스를 제외하고 다음 4-class taxonomy를 사용한다.
@@ -377,15 +377,15 @@ Kaggle/Roboflow 원본 클래스는 프로젝트 표준 클래스명으로 remap
 
 이 과정에서 예를 들어 다음 라벨은 현재 주요 병변 체계에 맞춰 유지된다.
 
-- `龋病` -> `caries_family`
-- `根尖周炎` -> `periapical_lesion`
+- 우식증 계열 -> `caries_family`
+- 치근단 염증 계열 -> `periapical_lesion`
 
 다음 라벨은 현 detector taxonomy와 직접 정렬되지 않아 제외한다.
 
-- `深窝沟`
-- `牙髓炎`
-- `牙齿发育异常`
-- `其他`
+- 깊은 와구·열구
+- 치수염
+- 치아 발육 이상
+- 기타
 
 현재 파생 출력은 `images/{train,val,test}`와 `labels/{train,val,test}` YOLO 구조의
 `data/detection_kaggle_pediatric_selected_6class`이며, split 정책은 원본 `Test`를 그대로 `test`로 유지하고
@@ -414,7 +414,7 @@ Kaggle/Roboflow 원본 클래스는 프로젝트 표준 클래스명으로 remap
 - 원본 URL: https://github.com/PuckBlink/PDCNN
 - annotation export 참고 URL: https://zenodo.org/records/15565284
 - 로컬 raw 경로: `data/raw/pdcnn_periodontitis_bone_loss`
-- 현재 프로젝트 내 주요 파생 데이터셋: `data/detection_periodontal_pdcnn_2class`, `data/detection_pdcnn_bone_loss_v4`, `data/severity_periodontal`
+- 현재 프로젝트 내 주요 파생 데이터셋: `data/detection_periodontal_pdcnn_2class_bg`, `data/detection_pdcnn_bone_loss_v4`, `data/severity_periodontal`
 
 치주 전용 detector는 PDCNN perio-dataset의 COCO bbox annotation을 사용한다.
 
@@ -539,7 +539,7 @@ Severity 데이터셋은 DENTEX lesion annotation을 crop으로 잘라 분류 �
 Roboflow 데이터는 기존 DENTEX, CariesXrays, UMFIH 이미지와 겹칠 수 있으므로, 병합 전에 이미지 내용 기반 중복
 검사를 수행한다. 파일명은 Roboflow export 과정에서 바뀔 수 있으므로 중복 판정 기준으로 사용하지 않는다.
 
-중복 검사는 `scripts/audit_roboflow_duplicates.py`에서 수행한다.
+중복 검사는 `scripts/data/audit_roboflow_duplicates.py`에서 수행한다.
 
 - exact duplicate:
   - 이미지 파일 bytes 기준 `SHA256`이 동일하면 중복 확정
@@ -617,8 +617,8 @@ Roboflow 데이터는 기존 DENTEX, CariesXrays, UMFIH 이미지와 겹칠 수 
   - 출력 클래스: `mild` / `severe`
   - 학습 데이터: `data/severity_periodontal/furcation_involvement`
   - 서빙 checkpoint: `artifacts/severity/serve/furcation_involvement/best.pt`
-- 재학습/재평가 실행 스크립트: `scripts/run_periodontal_severity_retrain.py`
-- 단일 checkpoint test 평가 스크립트: `scripts/eval_severity_classifier.py`
+- 재학습/재평가 실행 스크립트: `scripts/training/run_periodontal_severity_retrain.py`
+- 단일 checkpoint test 평가 스크립트: `scripts/evaluation/eval_severity_classifier.py`
 - 환경변수로 weights 교체 가능: `DENTAL_BL_SEVERITY_WEIGHTS`, `DENTAL_FI_SEVERITY_WEIGHTS`
 
 ### 5.3 서빙 구조
@@ -733,7 +733,7 @@ Severity 분류기는 다음 지표를 사용한다.
 
 - 반영 시점: 2026-06-03 promotion 기록 기준
 - 목적: 기존 서빙 4-class detector를 소아 panoramic 데이터에 적응시키되, main test 성능 저하를 제한하는 보수적 fine-tuning
-- 초기 weights: `artifacts/detection/serve/best.pt`
+- 초기 weights: `artifacts/detection/serve/dental_4class_detection_best.pt`
 - candidate weights: `artifacts/detection/yolov8s_serve_pediatric_ft_v1/weights/best.pt`
 - 학습 데이터: `data/detection_main_4class_with_pediatric/main_4class_with_pediatric.yaml`
 - 소아 별도 평가 데이터: `data/detection_kaggle_pediatric_selected_4class/pediatric_selected_4class.yaml`
@@ -771,7 +771,7 @@ critical class recall 변화:
 | retained_root | 0.4321 | 0.4312 | 0.0009 |
 
 결과적으로 gating은 `passed=true`였고, 기존 서빙본은 `artifacts/detection/serve/best.before_pediatric_ft_20260603.pt`로
-백업한 뒤 candidate checkpoint를 `artifacts/detection/serve/best.pt`로 승격했다. 승격 후 Django `Predictor` 로드
+백업한 뒤 candidate checkpoint를 `artifacts/detection/serve/dental_4class_detection_best.pt`로 승격했다. 승격 후 Django `Predictor` 로드
 검증에서도 class order가 동일하게 유지되었다.
 
 ### 6.6 이전 Hierarchical baseline 결과
@@ -809,9 +809,9 @@ recall은 `0.375`에서 `0.439`로 상승하여, 추가 학습 후 모델이 더
 2026-06-01에 PDCNN severity crop 데이터셋으로 BL/FI severity classifier를 학습하고 서빙 경로로 승격했다.
 
 - 모델: `xrv_densenet121` head-only fine-tuning, `img_size=224`
-- 학습 스크립트: `scripts/train_severity_classifier.py`
-- 재학습/재평가 오케스트레이션: `scripts/run_periodontal_severity_retrain.py`
-- test 평가 스크립트: `scripts/eval_severity_classifier.py`
+- 학습 스크립트: `scripts/training/train_severity_classifier.py`
+- 재학습/재평가 오케스트레이션: `scripts/training/run_periodontal_severity_retrain.py`
+- test 평가 스크립트: `scripts/evaluation/eval_severity_classifier.py`
 - 현재 재학습 기본 기준: best checkpoint 선택/early stopping 모두 `val_f1_macro`
 
 | run | classes | train | val | best epoch | best val_loss | best macro F1 |
@@ -857,7 +857,7 @@ confidence 운영점: background 보강 모델의 F1-optimal conf는 전체 0.44
 0.4(`DENTAL_PERIODONTAL_PREDICT_CONF`)로 설정했다. 신규 모델 + conf 0.4 조합은 기존 배포(positives-only +
 conf 0.1) 대비 정상 이미지 false positive를 약 90% 감소시킨다.
 
-평가 스크립트: `scripts/eval_periodontal_conf.py` (val 지표, F1-optimal conf, background FP 동시 산출).
+평가 스크립트: `scripts/evaluation/eval_periodontal_conf.py` (val 지표, F1-optimal conf, background FP 동시 산출).
 승격 시 기존본은 `artifacts/detection/serve/periodontal_best.before_bg_aug_20260611.pt`로 백업했다.
 
 ### 6.9 기록 및 모니터링
