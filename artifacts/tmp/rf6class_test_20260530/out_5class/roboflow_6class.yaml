@@ -1,5 +1,0 @@
-path: C:/Pywork/dental/dental/artifacts/tmp/rf6class_test_20260530/out_5class
-train: images/train
-val: images/val
-test: images/test
-names: ['caries_family', 'periapical_lesion', 'impacted_tooth', 'bone_loss', 'retained_root']

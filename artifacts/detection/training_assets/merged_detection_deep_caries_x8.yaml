@@ -1,9 +1,0 @@
-path: C:/Users/junho/Desktop/4학년 1학기/딥러닝실습/dental/data/detection_merged
-train: C:/Users/junho/Desktop/4학년 1학기/딥러닝실습/dental/artifacts/detection/training_assets/merged_detection_deep_caries_x8_train.txt
-val: images/val
-test: images/test
-names:
-- caries
-- deep_caries
-- periapical_lesion
-- impacted_tooth

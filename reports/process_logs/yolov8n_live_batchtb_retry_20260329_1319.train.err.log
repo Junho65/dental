@@ -1,4 +1,0 @@
-C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py:1341: UserWarning: expandable_segments not supported on this platform (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\c10/cuda/CUDAAllocatorConfig.h:28.)
-  return t.to(
-C:\Users\junho\AppData\Local\Programs\Python\Python312\Lib\site-packages\polars\meta\build.py:5: UserWarning: Polars binary is missing!
-  from polars._utils.polars_version import get_polars_version
