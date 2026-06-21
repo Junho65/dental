@@ -10,9 +10,6 @@
 <body>
     <svg style="display:none" aria-hidden="true">
         <defs>
-            <g id="icon-shield" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3 4 6v5c0 4.6 3.2 8.7 8 10 4.8-1.3 8-5.4 8-10V6l-8-3Z"/><path d="M8.5 12.2l2.3 2.3 4.5-4.7"/>
-            </g>
             <g id="icon-arrow" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 12h14M13 6l6 6-6 6"/>
             </g>
@@ -20,21 +17,6 @@
     </svg>
 
     <div class="page-shell">
-        <header class="site-header">
-            <a class="brand" href="#top">
-                <span class="brand-mark">
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-shield"/></svg>
-                </span>
-                Dental AI Detection Studio
-            </a>
-            <ul class="nav-links">
-                <li><a href="#how-it-works">이용 방법</a></li>
-                <li><a href="#workspace">분석 시작</a></li>
-                <li><a href="#trust">신뢰 정보</a></li>
-            </ul>
-            <a class="button button-primary nav-cta" href="#workspace">분석 시작</a>
-        </header>
-
         <header class="hero" id="top">
             <p class="eyebrow">이미 촬영한 X-ray로 받는 무료 2차 소견</p>
             <h1 class="headline">AI로 <span class="accent">2차 소견</span>을<br>확인해보세요</h1>
@@ -327,36 +309,9 @@
                             <p>건강보험심사평가원 수가 기준 정보로 산출한 예상 치료 항목과 비용 범위를 표로 제공합니다.</p>
                         </div>
                     </li>
-                    <li>
-                        <span class="trust-num">03</span>
-                        <div>
-                            <h3>전문의 상담 연계</h3>
-                            <p>본 결과는 참고용 2차 소견입니다. 최종 진단과 치료 결정은 반드시 치과 전문의와 상담해 주세요.</p>
-                        </div>
-                    </li>
                 </ul>
             </div>
         </section>
-
-        <section class="cta-band">
-            <div>
-                <h2>지금 바로 X-ray를 업로드하고<br>결과를 확인해보세요</h2>
-                <p>회원가입 없이, 무료로 바로 이용할 수 있습니다.</p>
-            </div>
-            <a class="button button-on-teal" href="#workspace">무료로 분석 시작하기</a>
-        </section>
-
-        <footer>
-            <p class="disclaimer">
-                본 결과는 의료 진단을 대체하지 않습니다. 최종 진단과 치료 결정은 반드시
-                치과 전문의 상담을 통해 확인해 주세요. © 2026 Dental AI Detection Studio
-            </p>
-            <div class="footer-links">
-                <a href="#">이용약관</a>
-                <a href="#">개인정보처리방침</a>
-                <a href="#">문의하기</a>
-            </div>
-        </footer>
     </div>
 
     {{ class_info|json_script:"class-info-data" }}

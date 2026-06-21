@@ -203,11 +203,6 @@ h2 {
     box-shadow: 0 12px 28px rgba(13, 95, 92, 0.26);
 }
 
-.button-on-teal {
-    color: var(--teal-deep);
-    background: #fff;
-}
-
 .button-secondary,
 .button-ghost {
     color: var(--ink);
@@ -1137,13 +1132,6 @@ h2 {
     }
 }
 
-.treatment-lookup {
-    margin-top: 4px;
-    color: var(--muted);
-    font-size: 0.8rem;
-    line-height: 1.45;
-}
-
 .treatment-row.is-expandable {
     cursor: pointer;
 }
@@ -1155,9 +1143,11 @@ h2 {
 .treatment-toggle {
     display: inline-flex;
     align-items: center;
+    justify-self: start;
+    width: fit-content;
     gap: 5px;
     margin-top: 6px;
-    padding: 3px 9px 3px 8px;
+    padding: 6px 12px;
     border: 1px solid rgba(29, 143, 134, 0.35);
     border-radius: 999px;
     background: rgba(29, 143, 134, 0.07);
@@ -1166,7 +1156,7 @@ h2 {
     font: inherit;
     font-size: 0.78rem;
     font-weight: 600;
-    line-height: 1;
+    line-height: 1.2;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
 
@@ -1476,70 +1466,8 @@ h2 {
 }
 
 /* ══════════════════════════════════════════════
-   랜딩 페이지 — 사이트 헤더 / 히어로 / 소개 섹션
+   랜딩 페이지 — 히어로 / 소개 섹션
    ══════════════════════════════════════════════ */
-
-.site-header {
-    position: sticky;
-    top: 0;
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-    margin: 0 0 24px;
-    padding: 20px 0;
-    border-bottom: 1px solid var(--line);
-    background: rgba(245, 236, 223, 0.82);
-    backdrop-filter: blur(10px);
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 1.02rem;
-    color: var(--ink);
-    text-decoration: none;
-}
-
-.brand-mark {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-    background: var(--teal-deep);
-    color: #fff;
-    flex-shrink: 0;
-}
-
-.nav-links {
-    display: flex;
-    gap: 30px;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    font-size: 0.9rem;
-}
-
-.nav-links a {
-    color: var(--muted);
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.nav-links a:hover {
-    color: var(--ink);
-}
-
-.nav-cta {
-    padding: 0 20px;
-    min-height: 42px;
-    font-size: 0.88rem;
-}
 
 .hero-row {
     display: grid;
@@ -1703,8 +1631,7 @@ h2 {
 }
 
 .section-head h2,
-.trust-intro h2,
-.cta-band h2 {
+.trust-intro h2 {
     line-height: 1.3;
 }
 
@@ -1820,66 +1747,6 @@ h2 {
     line-height: 1.75;
 }
 
-/* ── CTA 밴드 ───────────────────────────────────────── */
-.cta-band {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 32px;
-    flex-wrap: wrap;
-    padding: 48px;
-    margin-bottom: 48px;
-    border-radius: var(--radius-xl);
-    border-top: 3px solid var(--teal-bright);
-    background: var(--teal-deep);
-    color: #fff;
-}
-
-.cta-band h2 {
-    color: #fff;
-    font-size: clamp(1.5rem, 2.6vw, 2.1rem);
-    margin: 0 0 10px;
-}
-
-.cta-band p {
-    margin: 0;
-    opacity: 0.85;
-}
-
-/* ── 푸터 ───────────────────────────────────────────── */
-footer {
-    padding-top: 28px;
-    border-top: 1px solid var(--line);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    align-items: center;
-    justify-content: space-between;
-    color: var(--muted);
-    font-size: 0.85rem;
-    line-height: 1.6;
-}
-
-footer .footer-links {
-    display: flex;
-    gap: 18px;
-    flex-shrink: 0;
-}
-
-footer a {
-    color: inherit;
-    text-decoration: none;
-}
-
-footer a:hover {
-    color: var(--ink);
-}
-
-footer .disclaimer {
-    margin: 0;
-    max-width: 56ch;
-}
-
 /* ── 반응형 (랜딩 섹션) ──────────────────────────────── */
 @media (max-width: 900px) {
     .hero-row,
@@ -1896,16 +1763,6 @@ footer .disclaimer {
     .timeline::before {
         display: none;
     }
-
-    .nav-links {
-        display: none;
-    }
-
-    .cta-band {
-        flex-direction: column;
-        align-items: flex-start;
-        text-align: left;
-    }
 }
 
 @media (max-width: 560px) {
@@ -1913,27 +1770,11 @@ footer .disclaimer {
         font-size: clamp(2rem, 9vw, 2.6rem);
     }
 
-    .lightbox-panel,
-    .cta-band {
+    .lightbox-panel {
         padding: 20px;
     }
 
     .film-strip {
         height: 170px;
-    }
-
-    .site-header {
-        gap: 12px;
-    }
-
-    .brand {
-        font-size: 0.86rem;
-        white-space: nowrap;
-    }
-
-    .nav-cta {
-        padding: 0 14px;
-        min-height: 38px;
-        font-size: 0.8rem;
     }
 }

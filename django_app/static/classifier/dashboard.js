@@ -152,50 +152,6 @@
         primary_only: " 대표 진료항목만 표시합니다.",
     };
 
-    const matchesHospitalFilter = (optionName) => {
-        const name = optionName || "";
-        switch (state.hospitalFilter) {
-            case "clinic":
-                return !/(종합|종병이상|상급|치대부속|대학부속)/.test(name);
-            case "general":
-                return /(종합|종병이상|상급종합)/.test(name);
-            case "dental_univ":
-                return /(치대부속|치과대학|대학부속)/.test(name);
-            default:
-                return true;
-        }
-    };
-
-    const matchesSurgeryFilter = (optionName) => {
-        const name = optionName || "";
-        switch (state.surgeryFilter) {
-            case "primary":
-                return !/제2/.test(name);
-            case "secondary":
-                return /제2/.test(name);
-            default:
-                return true;
-        }
-    };
-
-    const isDisabledOption = (option) => {
-        const fullText = [option?.name, option?.full_name, option?.label]
-            .filter(Boolean)
-            .join(" ");
-        return /장애인|장애 가산|장애가산|장애/.test(fullText);
-    };
-
-    const matchesDisabilityFilter = (option) => {
-        switch (state.disabilityFilter) {
-            case "general":
-                return !isDisabledOption(option);
-            case "disabled":
-                return isDisabledOption(option);
-            default:
-                return true;
-        }
-    };
-
     const isCostFilterActive = () =>
         state.hospitalFilter !== "all" || state.surgeryFilter !== "all" || state.disabilityFilter !== "general";
 
@@ -296,11 +252,8 @@
         return fmtCurrency(hasMin ? min : max);
     };
 
-    const getVisualClassName = (className) => className;
-
     const getDisplayInfo = (className) => {
-        const info = classMap.get(getVisualClassName(className));
-        return info || classMap.get(className) || {};
+        return classMap.get(className) || {};
     };
 
     const getDisplayName = (className) => {
@@ -669,9 +622,6 @@
                     : allowFallbackPrice
                         ? toFiniteNumber(treatment.fee_max ?? treatment.price ?? treatment.unit_price)
                         : NaN;
-                const lookupKeywords = Array.isArray(treatment.lookup_keywords)
-                    ? treatment.lookup_keywords.filter(Boolean)
-                    : [];
                 visibleItems.push({
                     treatment,
                     treatmentIndex,
@@ -679,7 +629,6 @@
                     isFiltered,
                     itemMin,
                     itemMax,
-                    lookupKeywords,
                 });
             });
 
@@ -692,10 +641,7 @@
             const routeDescription = estimate?.followup_description || item.followup_description || "";
 
             const renderTreatmentItem = (itemData, roleLabel, roleClass) => {
-                const { treatment, treatmentIndex, options, isFiltered, itemMin, itemMax, lookupKeywords } = itemData;
-                const lookupMarkup = lookupKeywords.length
-                    ? `<div class="treatment-lookup">HIRA 검색어: ${escapeHtml(lookupKeywords.join(", "))}</div>`
-                    : "";
+                const { treatment, treatmentIndex, options, isFiltered, itemMin, itemMax } = itemData;
                 const detailId = `${lesionKey}-detail-${treatmentIndex}`;
                 const hasOptions = options.length > 1;
                 return `
@@ -706,7 +652,6 @@
                                 <strong class="lesion-treatment__name">${escapeHtml(
                                     treatment.name || treatment.kor_nm || estimate.treatment_name || "치과 전문의 상담 필요"
                                 )}</strong>
-                                ${lookupMarkup}
                             </div>
                             <div class="lesion-treatment__meta">
                                 <div class="lesion-treatment__cost">${Number.isFinite(itemMin) || Number.isFinite(itemMax) ? escapeHtml(fmtRange(itemMin, itemMax)) : "-"}</div>
@@ -892,7 +837,7 @@
         // 클래스별로 그룹화 (첫 등장 순서 유지)
         const classGroups = new Map();
         sorted.forEach((item, index) => {
-            const key = getVisualClassName(item.class_name);
+            const key = item.class_name;
             if (!classGroups.has(key)) classGroups.set(key, []);
             classGroups.get(key).push({ item, index });
         });
@@ -901,13 +846,6 @@
         const detectionRows = [];
         for (const [className, entries] of classGroups.entries()) {
             explanationCards.push(buildClassExplanationCard(className, entries.length));
-            /*
-
-            // 클래스 공통 설명 블록 (그룹 상단에 1회)
-                        ${nextStepCopy ? `<p class="patient-next-step">다음 단계: ${escapeHtml(nextStepCopy)}</p>` : ""}
-
-            // 해당 클래스의 탐지 행들
-            */
             for (const { item, index } of entries) {
                 const severityChip = buildSeverityChip(item);
                 const followupChip = buildFollowupChip(item);
