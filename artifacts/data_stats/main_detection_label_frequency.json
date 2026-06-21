@@ -1,0 +1,127 @@
+{
+  "dataset_yaml": "data/detection_main_4class_with_pediatric/main_4class_with_pediatric.yaml",
+  "dataset_root": "data/detection_main_4class_with_pediatric",
+  "class_names": [
+    "caries_family",
+    "periapical_lesion",
+    "impacted_tooth",
+    "retained_root"
+  ],
+  "source_class_names": [
+    "caries_family",
+    "periapical_lesion",
+    "impacted_tooth",
+    "retained_root"
+  ],
+  "applied_remap": null,
+  "metric_definition": {
+    "frequency_label": "Number of annotations for each label.",
+    "relative_frequency_percent": "Frequency(Label) divided by total annotations in the same scope, multiplied by 100."
+  },
+  "overall": {
+    "image_count": 8267,
+    "annotation_count": 24629,
+    "rows": [
+      {
+        "label": "caries_family",
+        "frequency_label": 20274,
+        "relative_frequency_percent": 82.3176
+      },
+      {
+        "label": "periapical_lesion",
+        "frequency_label": 1924,
+        "relative_frequency_percent": 7.8119
+      },
+      {
+        "label": "impacted_tooth",
+        "frequency_label": 1825,
+        "relative_frequency_percent": 7.41
+      },
+      {
+        "label": "retained_root",
+        "frequency_label": 606,
+        "relative_frequency_percent": 2.4605
+      }
+    ]
+  },
+  "splits": {
+    "train": {
+      "image_count": 6587,
+      "annotation_count": 19520,
+      "rows": [
+        {
+          "label": "caries_family",
+          "frequency_label": 16070,
+          "relative_frequency_percent": 82.3258
+        },
+        {
+          "label": "periapical_lesion",
+          "frequency_label": 1538,
+          "relative_frequency_percent": 7.8791
+        },
+        {
+          "label": "impacted_tooth",
+          "frequency_label": 1449,
+          "relative_frequency_percent": 7.4232
+        },
+        {
+          "label": "retained_root",
+          "frequency_label": 463,
+          "relative_frequency_percent": 2.3719
+        }
+      ]
+    },
+    "val": {
+      "image_count": 839,
+      "annotation_count": 2588,
+      "rows": [
+        {
+          "label": "caries_family",
+          "frequency_label": 2101,
+          "relative_frequency_percent": 81.1824
+        },
+        {
+          "label": "periapical_lesion",
+          "frequency_label": 219,
+          "relative_frequency_percent": 8.4621
+        },
+        {
+          "label": "impacted_tooth",
+          "frequency_label": 206,
+          "relative_frequency_percent": 7.9598
+        },
+        {
+          "label": "retained_root",
+          "frequency_label": 62,
+          "relative_frequency_percent": 2.3957
+        }
+      ]
+    },
+    "test": {
+      "image_count": 841,
+      "annotation_count": 2521,
+      "rows": [
+        {
+          "label": "caries_family",
+          "frequency_label": 2103,
+          "relative_frequency_percent": 83.4193
+        },
+        {
+          "label": "periapical_lesion",
+          "frequency_label": 167,
+          "relative_frequency_percent": 6.6244
+        },
+        {
+          "label": "impacted_tooth",
+          "frequency_label": 170,
+          "relative_frequency_percent": 6.7434
+        },
+        {
+          "label": "retained_root",
+          "frequency_label": 81,
+          "relative_frequency_percent": 3.213
+        }
+      ]
+    }
+  }
+}

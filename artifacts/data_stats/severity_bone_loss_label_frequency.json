@@ -1,0 +1,97 @@
+{
+  "class_names": [
+    "mild",
+    "medium",
+    "severe"
+  ],
+  "label_column": "label",
+  "metric_definition": {
+    "frequency_label": "Number of samples for each label.",
+    "relative_frequency_percent": "Frequency(Label) divided by total samples in the same scope, multiplied by 100."
+  },
+  "overall": {
+    "sample_count": 29870,
+    "rows": [
+      {
+        "label": "mild",
+        "frequency_label": 18150,
+        "relative_frequency_percent": 60.7633
+      },
+      {
+        "label": "medium",
+        "frequency_label": 8755,
+        "relative_frequency_percent": 29.3103
+      },
+      {
+        "label": "severe",
+        "frequency_label": 2965,
+        "relative_frequency_percent": 9.9263
+      }
+    ]
+  },
+  "splits": {
+    "train": {
+      "csv_path": "data/severity_periodontal/bone_loss/train.csv",
+      "sample_count": 24022,
+      "rows": [
+        {
+          "label": "mild",
+          "frequency_label": 14572,
+          "relative_frequency_percent": 60.6611
+        },
+        {
+          "label": "medium",
+          "frequency_label": 7008,
+          "relative_frequency_percent": 29.1733
+        },
+        {
+          "label": "severe",
+          "frequency_label": 2442,
+          "relative_frequency_percent": 10.1657
+        }
+      ]
+    },
+    "val": {
+      "csv_path": "data/severity_periodontal/bone_loss/val.csv",
+      "sample_count": 2997,
+      "rows": [
+        {
+          "label": "mild",
+          "frequency_label": 1884,
+          "relative_frequency_percent": 62.8629
+        },
+        {
+          "label": "medium",
+          "frequency_label": 853,
+          "relative_frequency_percent": 28.4618
+        },
+        {
+          "label": "severe",
+          "frequency_label": 260,
+          "relative_frequency_percent": 8.6753
+        }
+      ]
+    },
+    "test": {
+      "csv_path": "data/severity_periodontal/bone_loss/test.csv",
+      "sample_count": 2851,
+      "rows": [
+        {
+          "label": "mild",
+          "frequency_label": 1694,
+          "relative_frequency_percent": 59.4177
+        },
+        {
+          "label": "medium",
+          "frequency_label": 894,
+          "relative_frequency_percent": 31.3574
+        },
+        {
+          "label": "severe",
+          "frequency_label": 263,
+          "relative_frequency_percent": 9.2248
+        }
+      ]
+    }
+  }
+}

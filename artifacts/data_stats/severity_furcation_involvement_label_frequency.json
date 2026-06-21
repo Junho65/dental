@@ -1,0 +1,76 @@
+{
+  "class_names": [
+    "mild",
+    "severe"
+  ],
+  "label_column": "label",
+  "metric_definition": {
+    "frequency_label": "Number of samples for each label.",
+    "relative_frequency_percent": "Frequency(Label) divided by total samples in the same scope, multiplied by 100."
+  },
+  "overall": {
+    "sample_count": 3543,
+    "rows": [
+      {
+        "label": "mild",
+        "frequency_label": 2532,
+        "relative_frequency_percent": 71.4649
+      },
+      {
+        "label": "severe",
+        "frequency_label": 1011,
+        "relative_frequency_percent": 28.5351
+      }
+    ]
+  },
+  "splits": {
+    "train": {
+      "csv_path": "data/severity_periodontal/furcation_involvement/train.csv",
+      "sample_count": 2868,
+      "rows": [
+        {
+          "label": "mild",
+          "frequency_label": 2063,
+          "relative_frequency_percent": 71.9317
+        },
+        {
+          "label": "severe",
+          "frequency_label": 805,
+          "relative_frequency_percent": 28.0683
+        }
+      ]
+    },
+    "val": {
+      "csv_path": "data/severity_periodontal/furcation_involvement/val.csv",
+      "sample_count": 317,
+      "rows": [
+        {
+          "label": "mild",
+          "frequency_label": 214,
+          "relative_frequency_percent": 67.5079
+        },
+        {
+          "label": "severe",
+          "frequency_label": 103,
+          "relative_frequency_percent": 32.4921
+        }
+      ]
+    },
+    "test": {
+      "csv_path": "data/severity_periodontal/furcation_involvement/test.csv",
+      "sample_count": 358,
+      "rows": [
+        {
+          "label": "mild",
+          "frequency_label": 255,
+          "relative_frequency_percent": 71.2291
+        },
+        {
+          "label": "severe",
+          "frequency_label": 103,
+          "relative_frequency_percent": 28.7709
+        }
+      ]
+    }
+  }
+}

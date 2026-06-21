@@ -1,70 +1,73 @@
 {
   "metadata": {
-    "description": "Table-ready hyperparameter summary for the current project defaults.",
+    "description": "Table-ready hyperparameter summary for the current project pipeline (4-class main detector, 2-class periodontal detector, periodontal BL/FI severity classifiers).",
     "column_schema": [
       "Category",
       "Parameter",
       "Value/Description"
     ],
     "sources": {
-      "detection_script_defaults": [
-        "scripts/train_detection.py",
+      "main_detection_script_defaults": [
+        "scripts/training/train_detection.py",
         "README.md",
         "ARCHITECTURE.md"
       ],
-      "detection_recorded_args": [
-        "runs/detect/artifacts/detection/yolov8n_hierarchical_img416_e30_w0/args.yaml"
+      "main_detection_served_finetune": [
+        "scripts/training/run_pediatric_service_finetune.py"
+      ],
+      "periodontal_detection_recorded_args": [
+        "runs/detect/artifacts/detection/yolov8s_periodontal_2class_bg_img640/run01/args.yaml"
       ],
       "severity_script_defaults": [
-        "scripts/train_severity_classifier.py",
+        "scripts/training/train_severity_classifier.py",
         "src/severity/dataset.py"
       ],
-      "severity_recorded_metrics": [
-        "artifacts/severity/efficientnet_b0_seed42_es/metrics.json"
+      "severity_periodontal_retrain": [
+        "scripts/training/run_periodontal_severity_retrain.py"
       ]
     }
   },
   "tables": {
-    "detection_training_default": [
+    "main_detection_training": [
       {
         "Category": "Dataset & Input",
         "Parameter": "Task",
-        "Value/Description": "Object detection on hierarchical 3-class dataset (`caries_family`, `periapical_lesion`, `impacted_tooth`)."
+        "Value/Description": "Object detection on the 4-class main lesion dataset (`caries_family`, `periapical_lesion`, `impacted_tooth`, `retained_root`)."
       },
       {
         "Category": "Dataset & Input",
         "Parameter": "Dataset YAML",
-        "Value/Description": "Default script target is `data/detection_hierarchical/hierarchical_detection.yaml`."
+        "Value/Description": "Final served detector is fine-tuned on `data/detection_main_4class_with_pediatric/main_4class_with_pediatric.yaml`. `scripts/training/train_detection.py` base default is `data/detection_hierarchical/hierarchical_detection.yaml`."
       },
       {
         "Category": "Dataset & Input",
         "Parameter": "Model",
-        "Value/Description": "`yolov8n.pt` (Ultralytics YOLOv8n pretrained checkpoint)."
+        "Value/Description": "`yolov8s.pt` (Ultralytics YOLOv8s). The served fine-tune initializes from the current `artifacts/detection/serve/dental_4class_detection_best.pt`."
       },
       {
         "Category": "Dataset & Input",
         "Parameter": "Input Image Size",
-        "Value/Description": "416 x 416 pixels (current project default)."
+        "Value/Description": "416 x 416 pixels."
       },
       {
         "Category": "Dataset & Input",
         "Parameter": "Batch Size",
-        "Value/Description": "16"
+        "Value/Description": "8 (GTX 1660 6GB default; retry 4 then 2 on CUDA OOM)."
       },
       {
         "Category": "Dataset & Input",
         "Parameter": "Workers",
-        "Value/Description": "4 DataLoader workers in current script default."
+        "Value/Description": "4 DataLoader workers."
       },
       {
         "Category": "Training Regimen",
         "Parameter": "Number of Epochs",
-        "Value/Description": "50 epochs in current script default."
+        "Value/Description": "50 (`train_detection.py` default). Served pediatric fine-tune uses 30 epochs (`run_pediatric_service_finetune.py`)."
       },
       {
         "Category": "Training Regimen",
         "Parameter": "Early Stopping Patience",
-        "Value/Description": "10 epochs without Ultralytics fitness improvement."
+        "Value/Description": "10 epochs without Ultralytics fitness improvement (base default); 8 epochs in the served pediatric fine-tune."
       },
       {
         "Category": "Training Regimen",
@@ -74,12 +77,12 @@
       {
         "Category": "Training Regimen",
         "Parameter": "Device",
-        "Value/Description": "Default training device is `0` (first CUDA device) in the script."
+        "Value/Description": "Default training device is `0` (first CUDA device)."
       },
       {
         "Category": "Optimizer & Learning Rate",
         "Parameter": "Optimizer",
-        "Value/Description": "`auto` (Ultralytics automatic optimizer selection). Recorded run config also stores `optimizer: auto`."
+        "Value/Description": "`auto` (Ultralytics automatic optimizer selection)."
       },
       {
         "Category": "Optimizer & Learning Rate",
@@ -103,18 +106,8 @@
       },
       {
         "Category": "Optimizer & Learning Rate",
-        "Parameter": "Warmup Epochs",
-        "Value/Description": "3.0"
-      },
-      {
-        "Category": "Optimizer & Learning Rate",
-        "Parameter": "Warmup Momentum",
-        "Value/Description": "0.8"
-      },
-      {
-        "Category": "Optimizer & Learning Rate",
-        "Parameter": "Warmup Bias LR",
-        "Value/Description": "0.1"
+        "Parameter": "Warmup",
+        "Value/Description": "warmup_epochs=3.0, warmup_momentum=0.8, warmup_bias_lr=0.1"
       },
       {
         "Category": "Data Augmentation",
@@ -123,90 +116,132 @@
       },
       {
         "Category": "Data Augmentation",
-        "Parameter": "Translation",
-        "Value/Description": "0.1"
+        "Parameter": "Geometric",
+        "Value/Description": "translate=0.1, scale=0.5, fliplr=0.5"
       },
       {
         "Category": "Data Augmentation",
-        "Parameter": "Scale",
-        "Value/Description": "0.5"
-      },
-      {
-        "Category": "Data Augmentation",
-        "Parameter": "Horizontal Flip",
-        "Value/Description": "fliplr=0.5"
-      },
-      {
-        "Category": "Data Augmentation",
-        "Parameter": "Mosaic",
-        "Value/Description": "1.0"
-      },
-      {
-        "Category": "Data Augmentation",
-        "Parameter": "MixUp",
-        "Value/Description": "0.0"
-      },
-      {
-        "Category": "Data Augmentation",
-        "Parameter": "CutMix",
-        "Value/Description": "0.0"
-      },
-      {
-        "Category": "Data Augmentation",
-        "Parameter": "Close Mosaic",
-        "Value/Description": "10 final epochs without mosaic."
+        "Parameter": "Mosaic / MixUp",
+        "Value/Description": "mosaic=1.0, mixup=0.0, close_mosaic=10 (final 10 epochs without mosaic)."
       },
       {
         "Category": "Loss & Evaluation",
-        "Parameter": "Box Loss Weight",
-        "Value/Description": "7.5"
-      },
-      {
-        "Category": "Loss & Evaluation",
-        "Parameter": "Class Loss Weight",
-        "Value/Description": "0.5"
-      },
-      {
-        "Category": "Loss & Evaluation",
-        "Parameter": "DFL Weight",
-        "Value/Description": "1.5"
+        "Parameter": "Loss Weights",
+        "Value/Description": "box=7.5, cls=0.5, dfl=1.5"
       },
       {
         "Category": "Loss & Evaluation",
         "Parameter": "Validation IoU Threshold",
-        "Value/Description": "0.7 in recorded Ultralytics args."
+        "Value/Description": "0.7"
       },
       {
         "Category": "Loss & Evaluation",
         "Parameter": "Primary Detection Metrics",
-        "Value/Description": "`precision`, `recall`, `mAP50`, `mAP50-95`; project documentation treats `mAP50-95` as the key metric."
+        "Value/Description": "`precision`, `recall`, `mAP50`, `mAP50-95`; `mAP50-95` is treated as the key metric."
+      },
+      {
+        "Category": "Promotion Gate",
+        "Parameter": "Served Fine-tune Guardrails",
+        "Value/Description": "Pediatric fine-tune only promoted if main test mAP50-95 drop <= 0.01 and critical-class (`impacted_tooth`, `retained_root`) recall drop <= 0.05 while pediatric mAP50-95 does not decrease."
       }
     ],
-    "severity_training_default": [
+    "periodontal_detection_training": [
       {
         "Category": "Dataset & Input",
         "Parameter": "Task",
-        "Value/Description": "Binary severity classification on lesion crops (`caries` vs `deep_caries`)."
+        "Value/Description": "Object detection on the 2-class periodontal dataset (`bone_loss`, `furcation_involvement`) with added background-negative images."
       },
       {
         "Category": "Dataset & Input",
-        "Parameter": "Training CSV",
-        "Value/Description": "Default labeled training split: `data/severity/train.csv`."
-      },
-      {
-        "Category": "Dataset & Input",
-        "Parameter": "Validation CSV",
-        "Value/Description": "Default labeled validation split: `data/severity/val.csv`."
+        "Parameter": "Dataset YAML",
+        "Value/Description": "`data/detection_periodontal_pdcnn_2class_bg/periodontal_pdcnn_2class.yaml`."
       },
       {
         "Category": "Dataset & Input",
         "Parameter": "Model",
-        "Value/Description": "`efficientnet_b0`"
+        "Value/Description": "`yolov8s` initialized from a prior 5-class periodontal-domain checkpoint. Served checkpoint: `artifacts/detection/serve/periodontal_2class_detection_best.pt`."
       },
       {
         "Category": "Dataset & Input",
         "Parameter": "Input Image Size",
-        "Value/Description": "224 x 224 pixels"
+        "Value/Description": "640 x 640 pixels."
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Batch Size",
+        "Value/Description": "4"
+      },
+      {
+        "Category": "Training Regimen",
+        "Parameter": "Number of Epochs",
+        "Value/Description": "80 (recorded run)."
+      },
+      {
+        "Category": "Training Regimen",
+        "Parameter": "Early Stopping Patience",
+        "Value/Description": "15 epochs without Ultralytics fitness improvement."
+      },
+      {
+        "Category": "Training Regimen",
+        "Parameter": "AMP",
+        "Value/Description": "Enabled."
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Optimizer",
+        "Value/Description": "`auto` (Ultralytics automatic optimizer selection)."
+      },
+      {
+        "Category": "Optimizer & Learning Rate",
+        "Parameter": "Learning Rate / Momentum / Weight Decay",
+        "Value/Description": "lr0=0.01, lrf=0.01, momentum=0.937, weight_decay=0.0005, warmup_epochs=3.0"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "Geometric",
+        "Value/Description": "degrees=0.0, translate=0.1, scale=0.5, fliplr=0.5"
+      },
+      {
+        "Category": "Data Augmentation",
+        "Parameter": "Mosaic / MixUp",
+        "Value/Description": "mosaic=1.0, mixup=0.0, close_mosaic=10"
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Loss Weights",
+        "Value/Description": "box=7.5, cls=0.5, dfl=1.5"
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Validation IoU Threshold",
+        "Value/Description": "0.7"
+      },
+      {
+        "Category": "Loss & Evaluation",
+        "Parameter": "Primary Detection Metrics",
+        "Value/Description": "`precision`, `recall`, `mAP50`, `mAP50-95`."
+      }
+    ],
+    "periodontal_severity_training": [
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Task",
+        "Value/Description": "Periodontal severity classification on detector-cropped lesion ROIs. `bone_loss`: `mild`/`medium`/`severe` (3-class); `furcation_involvement`: `mild`/`severe` (2-class)."
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Training / Validation CSV",
+        "Value/Description": "`data/severity_periodontal/<lesion>/train.csv` and `val.csv` (lesion in {`bone_loss`, `furcation_involvement`})."
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Model",
+        "Value/Description": "`xrv_densenet121` (TorchXRayVision DenseNet121), pretrained weights `densenet121-res224-all`."
+      },
+      {
+        "Category": "Dataset & Input",
+        "Parameter": "Input Image Size",
+        "Value/Description": "224 x 224 pixels, single-channel grayscale."
       },
       {
         "Category": "Dataset & Input",
@@ -216,7 +251,7 @@
       {
         "Category": "Training Regimen",
         "Parameter": "Number of Epochs",
-        "Value/Description": "12 epochs by default"
+        "Value/Description": "12 (`train_severity_classifier.py` default). Periodontal retrain orchestrator (`run_periodontal_severity_retrain.py`) uses 20."
       },
       {
         "Category": "Training Regimen",
@@ -226,12 +261,7 @@
       {
         "Category": "Training Regimen",
         "Parameter": "Pseudo-label Usage",
-        "Value/Description": "Disabled by default (`--pseudo-csv=None`). Current recorded metrics show `used_pseudo_labels: false`."
-      },
-      {
-        "Category": "Training Regimen",
-        "Parameter": "Pseudo-label Weight Scale",
-        "Value/Description": "0.5 if pseudo labels are used."
+        "Value/Description": "Disabled by default (`--pseudo-csv=None`)."
       },
       {
         "Category": "Optimizer & Learning Rate",
@@ -251,42 +281,17 @@
       {
         "Category": "Optimizer & Learning Rate",
         "Parameter": "Learning Rate Scheduler",
-        "Value/Description": "ReduceLROnPlateau"
-      },
-      {
-        "Category": "Optimizer & Learning Rate",
-        "Parameter": "Scheduler Patience",
-        "Value/Description": "4"
-      },
-      {
-        "Category": "Optimizer & Learning Rate",
-        "Parameter": "Scheduler Factor",
-        "Value/Description": "0.5"
+        "Value/Description": "ReduceLROnPlateau (factor=0.5; patience=4 script default, 3 in periodontal retrain)."
       },
       {
         "Category": "Data Augmentation",
-        "Parameter": "Resize",
-        "Value/Description": "Resize to 224 x 224"
-      },
-      {
-        "Category": "Data Augmentation",
-        "Parameter": "Random Horizontal Flip",
-        "Value/Description": "Applied with probability 0.5 during training."
-      },
-      {
-        "Category": "Data Augmentation",
-        "Parameter": "Random Rotation",
-        "Value/Description": "degrees=8"
-      },
-      {
-        "Category": "Data Augmentation",
-        "Parameter": "Color Jitter",
-        "Value/Description": "brightness=0.12, contrast=0.12"
+        "Parameter": "Transform",
+        "Value/Description": "Grayscale convert, resize to 224 (bilinear). Train-only: random horizontal flip p=0.5 and random rotation in [-8, 8] degrees."
       },
       {
         "Category": "Data Augmentation",
         "Parameter": "Normalization",
-        "Value/Description": "ImageNet mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)"
+        "Value/Description": "TorchXRayVision `xrv.datasets.normalize(x, 255)` scaling (NOT ImageNet mean/std; no color jitter)."
       },
       {
         "Category": "Loss & Evaluation",
@@ -296,32 +301,27 @@
       {
         "Category": "Loss & Evaluation",
         "Parameter": "Class Weights",
-        "Value/Description": "Computed from training label counts as inverse-frequency style weights."
+        "Value/Description": "Inverse-frequency style weights computed from training label counts."
       },
       {
         "Category": "Loss & Evaluation",
-        "Parameter": "Best Checkpoint Metric",
-        "Value/Description": "Default script setting: `val_loss`"
+        "Parameter": "Best Checkpoint / Early Stopping Metric",
+        "Value/Description": "`val_loss` (script default). Periodontal retrain selects and early-stops on `val_f1_macro`."
       },
       {
         "Category": "Loss & Evaluation",
-        "Parameter": "Early Stopping Metric",
-        "Value/Description": "Default script setting: `val_loss`"
-      },
-      {
-        "Category": "Loss & Evaluation",
-        "Parameter": "Early Stopping Patience",
-        "Value/Description": "10"
-      },
-      {
-        "Category": "Loss & Evaluation",
-        "Parameter": "Early Stopping Min Delta",
-        "Value/Description": "0.001"
+        "Parameter": "Early Stopping Patience / Min Delta",
+        "Value/Description": "patience=10 (script default) / 6 (periodontal retrain); min_delta=0.001."
       },
       {
         "Category": "Loss & Evaluation",
         "Parameter": "Primary Evaluation Metrics",
-        "Value/Description": "`val_loss`, `accuracy`, `macro F1`"
+        "Value/Description": "`accuracy`, `macro F1`, `weighted F1`, plus `val_loss`."
+      },
+      {
+        "Category": "Promotion Gate",
+        "Parameter": "Served Retrain Guardrail",
+        "Value/Description": "A retrained lesion classifier is promoted only if its test `f1_macro` is >= the currently served model's by at least `--promotion-min-delta` (default 0.0)."
       }
     ]
   }

@@ -1,0 +1,83 @@
+{
+  "dataset_yaml": "data/detection_periodontal_pdcnn_2class_bg/periodontal_pdcnn_2class.yaml",
+  "dataset_root": "data/detection_periodontal_pdcnn_2class_bg",
+  "class_names": [
+    "bone_loss",
+    "furcation_involvement"
+  ],
+  "source_class_names": [
+    "bone_loss",
+    "furcation_involvement"
+  ],
+  "applied_remap": null,
+  "metric_definition": {
+    "frequency_label": "Number of annotations for each label.",
+    "relative_frequency_percent": "Frequency(Label) divided by total annotations in the same scope, multiplied by 100."
+  },
+  "overall": {
+    "image_count": 1745,
+    "annotation_count": 33413,
+    "rows": [
+      {
+        "label": "bone_loss",
+        "frequency_label": 29870,
+        "relative_frequency_percent": 89.3963
+      },
+      {
+        "label": "furcation_involvement",
+        "frequency_label": 3543,
+        "relative_frequency_percent": 10.6037
+      }
+    ]
+  },
+  "splits": {
+    "train": {
+      "image_count": 1395,
+      "annotation_count": 26890,
+      "rows": [
+        {
+          "label": "bone_loss",
+          "frequency_label": 24022,
+          "relative_frequency_percent": 89.3343
+        },
+        {
+          "label": "furcation_involvement",
+          "frequency_label": 2868,
+          "relative_frequency_percent": 10.6657
+        }
+      ]
+    },
+    "val": {
+      "image_count": 176,
+      "annotation_count": 3314,
+      "rows": [
+        {
+          "label": "bone_loss",
+          "frequency_label": 2997,
+          "relative_frequency_percent": 90.4345
+        },
+        {
+          "label": "furcation_involvement",
+          "frequency_label": 317,
+          "relative_frequency_percent": 9.5655
+        }
+      ]
+    },
+    "test": {
+      "image_count": 174,
+      "annotation_count": 3209,
+      "rows": [
+        {
+          "label": "bone_loss",
+          "frequency_label": 2851,
+          "relative_frequency_percent": 88.8439
+        },
+        {
+          "label": "furcation_involvement",
+          "frequency_label": 358,
+          "relative_frequency_percent": 11.1561
+        }
+      ]
+    }
+  }
+}
