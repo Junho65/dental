@@ -1,0 +1,69 @@
+{
+  "weights": "C:\\Pywork\\dental\\dental\\runs\\detect\\artifacts\\detection\\yolov8s_periodontal_2class_bg_img640\\run01\\weights\\best.pt",
+  "split": "val",
+  "imgsz": 640,
+  "class_order": [
+    "bone_loss",
+    "furcation_involvement"
+  ],
+  "overall": {
+    "precision": 0.730013217955893,
+    "recall": 0.8320933972879294,
+    "map50": 0.8464350516902828,
+    "map50_95": 0.6948783550547236
+  },
+  "per_class": [
+    {
+      "class_name": "bone_loss",
+      "precision": 0.875071,
+      "recall": 0.910244,
+      "f1": 0.892311,
+      "map50": 0.95416,
+      "map50_95": 0.768798
+    },
+    {
+      "class_name": "furcation_involvement",
+      "precision": 0.584955,
+      "recall": 0.753943,
+      "f1": 0.658785,
+      "map50": 0.73871,
+      "map50_95": 0.620959
+    }
+  ],
+  "f1_optimal_conf": {
+    "overall": 0.4364364364364364,
+    "per_class": {
+      "bone_loss": {
+        "f1_optimal_conf": 0.3663663663663664,
+        "f1_at_optimal": 0.8943418505333308
+      },
+      "furcation_involvement": {
+        "f1_optimal_conf": 0.4364364364364364,
+        "f1_at_optimal": 0.6669018907433605
+      }
+    }
+  },
+  "background_images": 32,
+  "false_positives_on_backgrounds": {
+    "0.05": {
+      "fp_boxes_total": 193,
+      "images_with_fp": 29,
+      "fp_boxes_per_image": 6.031
+    },
+    "0.1": {
+      "fp_boxes_total": 125,
+      "images_with_fp": 27,
+      "fp_boxes_per_image": 3.906
+    },
+    "0.25": {
+      "fp_boxes_total": 75,
+      "images_with_fp": 25,
+      "fp_boxes_per_image": 2.344
+    },
+    "0.4": {
+      "fp_boxes_total": 44,
+      "images_with_fp": 20,
+      "fp_boxes_per_image": 1.375
+    }
+  }
+}

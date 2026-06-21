@@ -1,0 +1,41 @@
+{
+  "weights": "C:\\Pywork\\dental\\dental\\artifacts\\detection\\serve\\dental_4class_detection_best.pt",
+  "data": "C:\\Pywork\\dental\\dental\\data\\detection_kaggle_pediatric_selected_4class\\pediatric_selected_4class.yaml",
+  "imgsz": 416,
+  "split": "test",
+  "workers": 0,
+  "class_order": [
+    "caries_family",
+    "periapical_lesion",
+    "impacted_tooth",
+    "retained_root"
+  ],
+  "overall": {
+    "precision": 0.025081705152464464,
+    "recall": 0.046296296296296294,
+    "map50": 0.005277886798392766,
+    "map50_95": 0.0010661180624535788
+  },
+  "per_class": [
+    {
+      "class_name": "caries_family",
+      "images": 24,
+      "instances": 108,
+      "precision": 0.050163,
+      "recall": 0.092593,
+      "f1": 0.065073,
+      "map50": 0.010556,
+      "map50_95": 0.002132
+    },
+    {
+      "class_name": "periapical_lesion",
+      "images": 6,
+      "instances": 8,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "map50": 0.0,
+      "map50_95": 0.0
+    }
+  ]
+}

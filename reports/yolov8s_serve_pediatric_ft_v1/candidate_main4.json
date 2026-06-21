@@ -1,0 +1,61 @@
+{
+  "weights": "C:\\Pywork\\dental\\dental\\artifacts\\detection\\yolov8s_serve_pediatric_ft_v1\\weights\\best.pt",
+  "data": "C:\\Pywork\\dental\\dental\\data\\detection_main_4class_no_cyst_no_periodontal\\main_4class_no_cyst_no_periodontal.yaml",
+  "imgsz": 416,
+  "split": "test",
+  "workers": 0,
+  "class_order": [
+    "caries_family",
+    "periapical_lesion",
+    "impacted_tooth",
+    "retained_root"
+  ],
+  "overall": {
+    "precision": 0.5810959568872348,
+    "recall": 0.47827143914637693,
+    "map50": 0.48264176058798797,
+    "map50_95": 0.22033440537304072
+  },
+  "per_class": [
+    {
+      "class_name": "caries_family",
+      "images": 761,
+      "instances": 1995,
+      "precision": 0.533349,
+      "recall": 0.429073,
+      "f1": 0.475562,
+      "map50": 0.437236,
+      "map50_95": 0.194235
+    },
+    {
+      "class_name": "periapical_lesion",
+      "images": 82,
+      "instances": 159,
+      "precision": 0.403854,
+      "recall": 0.27044,
+      "f1": 0.323949,
+      "map50": 0.254658,
+      "map50_95": 0.091066
+    },
+    {
+      "class_name": "impacted_tooth",
+      "images": 69,
+      "instances": 170,
+      "precision": 0.784228,
+      "recall": 0.782353,
+      "f1": 0.783289,
+      "map50": 0.785527,
+      "map50_95": 0.423515
+    },
+    {
+      "class_name": "retained_root",
+      "images": 30,
+      "instances": 81,
+      "precision": 0.602953,
+      "recall": 0.43122,
+      "f1": 0.502828,
+      "map50": 0.453146,
+      "map50_95": 0.172522
+    }
+  ]
+}

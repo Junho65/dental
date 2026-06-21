@@ -1,0 +1,100 @@
+{
+  "service_weights": "C:\\Pywork\\dental\\dental\\artifacts\\detection\\serve\\dental_4class_detection_best.pt",
+  "candidate_weights": "C:\\Pywork\\dental\\dental\\artifacts\\detection\\yolov8s_serve_pediatric_ft_v1\\weights\\best.pt",
+  "candidate_class_order": [
+    "caries_family",
+    "periapical_lesion",
+    "impacted_tooth",
+    "retained_root"
+  ],
+  "dataset_audit": {
+    "pediatric_4class": {
+      "root": "C:\\Pywork\\dental\\dental\\data\\detection_kaggle_pediatric_selected_4class",
+      "yaml": "C:\\Pywork\\dental\\dental\\data\\detection_kaggle_pediatric_selected_4class\\pediatric_selected_4class.yaml",
+      "names": [
+        "caries_family",
+        "periapical_lesion",
+        "impacted_tooth",
+        "retained_root"
+      ],
+      "splits": {
+        "train": {
+          "images": 45,
+          "labels": 45
+        },
+        "val": {
+          "images": 12,
+          "labels": 12
+        },
+        "test": {
+          "images": 26,
+          "labels": 26
+        }
+      }
+    },
+    "main_with_pediatric": {
+      "root": "C:\\Pywork\\dental\\dental\\data\\detection_main_4class_with_pediatric",
+      "yaml": "C:\\Pywork\\dental\\dental\\data\\detection_main_4class_with_pediatric\\main_4class_with_pediatric.yaml",
+      "names": [
+        "caries_family",
+        "periapical_lesion",
+        "impacted_tooth",
+        "retained_root"
+      ],
+      "splits": {
+        "train": {
+          "images": 6587,
+          "labels": 6587
+        },
+        "val": {
+          "images": 839,
+          "labels": 839
+        },
+        "test": {
+          "images": 841,
+          "labels": 841
+        }
+      }
+    }
+  },
+  "comparison": {
+    "passed": true,
+    "thresholds": {
+      "max_main_map_drop": 0.01,
+      "max_critical_recall_drop": 0.05
+    },
+    "summary": {
+      "main_baseline_map50_95": 0.20671963099951024,
+      "main_candidate_map50_95": 0.22033440537304072,
+      "main_map50_95_drop": -0.01361477437353048,
+      "pediatric_baseline_map50_95": 0.0010661180624535788,
+      "pediatric_candidate_map50_95": 0.18254768981893027,
+      "pediatric_map50_95_delta": 0.1814815717564767
+    },
+    "critical_recalls": {
+      "impacted_tooth": {
+        "baseline_recall": 0.805882,
+        "candidate_recall": 0.782353,
+        "drop": 0.023529000000000022
+      },
+      "retained_root": {
+        "baseline_recall": 0.432099,
+        "candidate_recall": 0.43122,
+        "drop": 0.0008790000000000187
+      }
+    },
+    "reasons": []
+  },
+  "promotion": {
+    "attempted": true,
+    "completed": true,
+    "backup": "C:\\Pywork\\dental\\dental\\artifacts\\detection\\serve\\best.before_pediatric_ft_20260603.pt",
+    "promoted": "C:\\Pywork\\dental\\dental\\artifacts\\detection\\serve\\dental_4class_detection_best.pt"
+  },
+  "predictor_class_order_after_promotion": [
+    "caries_family",
+    "periapical_lesion",
+    "impacted_tooth",
+    "retained_root"
+  ]
+}
