@@ -1,0 +1,20 @@
+{
+  "train": {
+    "caries_family": 15907,
+    "periapical_lesion": 1516,
+    "impacted_tooth": 1449,
+    "retained_root": 463
+  },
+  "val": {
+    "caries_family": 2058,
+    "periapical_lesion": 215,
+    "impacted_tooth": 206,
+    "retained_root": 62
+  },
+  "test": {
+    "caries_family": 1995,
+    "periapical_lesion": 159,
+    "impacted_tooth": 170,
+    "retained_root": 81
+  }
+}

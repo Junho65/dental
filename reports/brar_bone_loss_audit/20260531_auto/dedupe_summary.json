@@ -1,0 +1,35 @@
+{
+  "existing_root": "C:\\Pywork\\dental\\dental\\data\\detection_hierarchical_zenodo_kaggle_6class_auto_v3",
+  "roboflow_root": "C:\\Pywork\\dental\\dental\\data\\raw\\brar_bone_resorption\\extracted",
+  "output_dir": "C:\\Pywork\\dental\\dental\\reports\\brar_bone_loss_audit\\20260531_auto",
+  "thresholds": {
+    "near_duplicate_distance_lte": 4,
+    "suspect_duplicate_distance_lte": 8
+  },
+  "existing_image_count": 8216,
+  "existing_image_count_by_split": {
+    "train": 6565,
+    "val": 831,
+    "test": 820
+  },
+  "roboflow_original_image_count": 988,
+  "roboflow_original_image_count_by_split": {
+    "roboflow": 988
+  },
+  "exact_duplicate_count": 0,
+  "near_duplicate_count": 260,
+  "suspect_duplicate_count": 1020,
+  "excluded_roboflow_image_count": 758,
+  "final_usable_roboflow_image_count": 230,
+  "existing_val_test_duplicate_roboflow_image_count": 73,
+  "skipped_image_count": 0,
+  "outputs": {
+    "duplicate_exact_csv": "C:\\Pywork\\dental\\dental\\reports\\brar_bone_loss_audit\\20260531_auto\\duplicate_exact.csv",
+    "duplicate_near_csv": "C:\\Pywork\\dental\\dental\\reports\\brar_bone_loss_audit\\20260531_auto\\duplicate_near.csv",
+    "duplicate_suspect_csv": "C:\\Pywork\\dental\\dental\\reports\\brar_bone_loss_audit\\20260531_auto\\duplicate_suspect.csv",
+    "roboflow_keep_csv": "C:\\Pywork\\dental\\dental\\reports\\brar_bone_loss_audit\\20260531_auto\\roboflow_keep.csv",
+    "skipped_images_csv": "C:\\Pywork\\dental\\dental\\reports\\brar_bone_loss_audit\\20260531_auto\\skipped_images.csv",
+    "duplicate_suspect_montage_png": "C:\\Pywork\\dental\\dental\\reports\\brar_bone_loss_audit\\20260531_auto\\duplicate_suspect_montage.png",
+    "duplicate_near_montage_png": "C:\\Pywork\\dental\\dental\\reports\\brar_bone_loss_audit\\20260531_auto\\duplicate_near_montage.png"
+  }
+}

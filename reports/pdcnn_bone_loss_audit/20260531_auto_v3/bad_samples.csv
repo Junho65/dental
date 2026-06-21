@@ -1,0 +1,3 @@
+issue,path,split
+missing_label,C:\Pywork\dental\dental\data\detection_pdcnn_bone_loss_v3\labels\train\pdcnn_perio_3281.tif_0.txt,train
+missing_label,C:\Pywork\dental\dental\data\detection_pdcnn_bone_loss_v3\labels\val\pdcnn_perio_3140.tif_0.txt,val

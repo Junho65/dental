@@ -1,0 +1,171 @@
+{
+  "dataset_yaml": "C:\\Pywork\\dental\\dental\\data\\detection_kaggle_pediatric_selected_6class\\pediatric_selected_6class.yaml",
+  "dataset_root": "C:\\Pywork\\dental\\dental\\data\\detection_kaggle_pediatric_selected_6class",
+  "class_names": [
+    "caries_family",
+    "periapical_lesion",
+    "impacted_tooth",
+    "bone_loss",
+    "cyst",
+    "retained_root"
+  ],
+  "source_class_names": [
+    "caries_family",
+    "periapical_lesion",
+    "impacted_tooth",
+    "bone_loss",
+    "cyst",
+    "retained_root"
+  ],
+  "applied_remap": null,
+  "metric_definition": {
+    "frequency_label": "Number of annotations for each label.",
+    "relative_frequency_percent": "Frequency(Label) divided by total annotations in the same scope, multiplied by 100."
+  },
+  "overall": {
+    "image_count": 83,
+    "annotation_count": 348,
+    "rows": [
+      {
+        "label": "caries_family",
+        "frequency_label": 314,
+        "relative_frequency_percent": 90.2299
+      },
+      {
+        "label": "periapical_lesion",
+        "frequency_label": 34,
+        "relative_frequency_percent": 9.7701
+      },
+      {
+        "label": "impacted_tooth",
+        "frequency_label": 0,
+        "relative_frequency_percent": 0.0
+      },
+      {
+        "label": "bone_loss",
+        "frequency_label": 0,
+        "relative_frequency_percent": 0.0
+      },
+      {
+        "label": "cyst",
+        "frequency_label": 0,
+        "relative_frequency_percent": 0.0
+      },
+      {
+        "label": "retained_root",
+        "frequency_label": 0,
+        "relative_frequency_percent": 0.0
+      }
+    ]
+  },
+  "splits": {
+    "train": {
+      "image_count": 45,
+      "annotation_count": 185,
+      "rows": [
+        {
+          "label": "caries_family",
+          "frequency_label": 163,
+          "relative_frequency_percent": 88.1081
+        },
+        {
+          "label": "periapical_lesion",
+          "frequency_label": 22,
+          "relative_frequency_percent": 11.8919
+        },
+        {
+          "label": "impacted_tooth",
+          "frequency_label": 0,
+          "relative_frequency_percent": 0.0
+        },
+        {
+          "label": "bone_loss",
+          "frequency_label": 0,
+          "relative_frequency_percent": 0.0
+        },
+        {
+          "label": "cyst",
+          "frequency_label": 0,
+          "relative_frequency_percent": 0.0
+        },
+        {
+          "label": "retained_root",
+          "frequency_label": 0,
+          "relative_frequency_percent": 0.0
+        }
+      ]
+    },
+    "val": {
+      "image_count": 12,
+      "annotation_count": 47,
+      "rows": [
+        {
+          "label": "caries_family",
+          "frequency_label": 43,
+          "relative_frequency_percent": 91.4894
+        },
+        {
+          "label": "periapical_lesion",
+          "frequency_label": 4,
+          "relative_frequency_percent": 8.5106
+        },
+        {
+          "label": "impacted_tooth",
+          "frequency_label": 0,
+          "relative_frequency_percent": 0.0
+        },
+        {
+          "label": "bone_loss",
+          "frequency_label": 0,
+          "relative_frequency_percent": 0.0
+        },
+        {
+          "label": "cyst",
+          "frequency_label": 0,
+          "relative_frequency_percent": 0.0
+        },
+        {
+          "label": "retained_root",
+          "frequency_label": 0,
+          "relative_frequency_percent": 0.0
+        }
+      ]
+    },
+    "test": {
+      "image_count": 26,
+      "annotation_count": 116,
+      "rows": [
+        {
+          "label": "caries_family",
+          "frequency_label": 108,
+          "relative_frequency_percent": 93.1034
+        },
+        {
+          "label": "periapical_lesion",
+          "frequency_label": 8,
+          "relative_frequency_percent": 6.8966
+        },
+        {
+          "label": "impacted_tooth",
+          "frequency_label": 0,
+          "relative_frequency_percent": 0.0
+        },
+        {
+          "label": "bone_loss",
+          "frequency_label": 0,
+          "relative_frequency_percent": 0.0
+        },
+        {
+          "label": "cyst",
+          "frequency_label": 0,
+          "relative_frequency_percent": 0.0
+        },
+        {
+          "label": "retained_root",
+          "frequency_label": 0,
+          "relative_frequency_percent": 0.0
+        }
+      ]
+    }
+  }
+}

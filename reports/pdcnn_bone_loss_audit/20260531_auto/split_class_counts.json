@@ -1,0 +1,11 @@
+{
+  "train": {
+    "bone_loss": 24043
+  },
+  "val": {
+    "bone_loss": 3016
+  },
+  "test": {
+    "bone_loss": 2832
+  }
+}

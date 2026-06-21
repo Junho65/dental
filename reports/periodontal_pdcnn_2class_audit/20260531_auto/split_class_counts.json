@@ -1,0 +1,14 @@
+{
+  "train": {
+    "bone_loss": 24022,
+    "furcation_involvement": 2868
+  },
+  "val": {
+    "bone_loss": 2997,
+    "furcation_involvement": 317
+  },
+  "test": {
+    "bone_loss": 2851,
+    "furcation_involvement": 358
+  }
+}

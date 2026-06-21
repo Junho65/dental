@@ -1,0 +1,19 @@
+{
+  "data": "C:\\Pywork\\dental\\dental\\data\\detection_pdcnn_bone_loss_v4\\pdcnn_bone_loss.yaml",
+  "root": "C:\\Pywork\\dental\\dental\\data\\detection_pdcnn_bone_loss_v4",
+  "names": [
+    "bone_loss"
+  ],
+  "image_counts": {
+    "train": 1145,
+    "val": 143,
+    "test": 143
+  },
+  "label_counts": {
+    "train": 24019,
+    "val": 2991,
+    "test": 2832
+  },
+  "label_issue_counts": {},
+  "missing_required_classes": {}
+}

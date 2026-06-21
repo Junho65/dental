@@ -1,0 +1,26 @@
+{
+  "train": {
+    "caries_family": 163,
+    "periapical_lesion": 22,
+    "impacted_tooth": 0,
+    "bone_loss": 0,
+    "cyst": 0,
+    "retained_root": 0
+  },
+  "val": {
+    "caries_family": 43,
+    "periapical_lesion": 4,
+    "impacted_tooth": 0,
+    "bone_loss": 0,
+    "cyst": 0,
+    "retained_root": 0
+  },
+  "test": {
+    "caries_family": 108,
+    "periapical_lesion": 8,
+    "impacted_tooth": 0,
+    "bone_loss": 0,
+    "cyst": 0,
+    "retained_root": 0
+  }
+}
