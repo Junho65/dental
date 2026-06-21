@@ -8,8 +8,8 @@ from src.severity.inference import SeverityPredictor
 
 # Repo root (…/dental), independent of process cwd when Django is started elsewhere.
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-_SERVE_DETECTION_WEIGHTS = _PROJECT_ROOT / "artifacts/detection/serve/best.pt"
-_SERVE_PERIODONTAL_WEIGHTS = _PROJECT_ROOT / "artifacts/detection/serve/periodontal_best.pt"
+_SERVE_DETECTION_WEIGHTS = _PROJECT_ROOT / "artifacts/detection/serve/dental_4class_detection_best.pt"
+_SERVE_PERIODONTAL_WEIGHTS = _PROJECT_ROOT / "artifacts/detection/serve/periodontal_2class_detection_best.pt"
 _SERVE_PERIAPICAL_FOLLOWUP_WEIGHTS = _PROJECT_ROOT / "artifacts/severity/serve/periapical_followup/best.pt"
 _SERVE_BL_SEVERITY_WEIGHTS = _PROJECT_ROOT / "artifacts/severity/serve/bone_loss/best.pt"
 _SERVE_FI_SEVERITY_WEIGHTS = _PROJECT_ROOT / "artifacts/severity/serve/furcation_involvement/best.pt"
