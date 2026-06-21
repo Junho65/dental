@@ -4,16 +4,10 @@ scikit-learn
 pillow
 tqdm
 pyyaml
-albumentations
-timm
-matplotlib
-seaborn
 huggingface_hub
-opencv-python
+torch
+torchvision
 torchxrayvision
-
-# Install torch/torchvision separately using scripts/install_torch.py
-# to match local NVIDIA driver/CUDA compatibility.
 
 # Django web service
 django

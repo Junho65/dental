@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import timm
 import torch.nn as nn
 import torchxrayvision as xrv
 
@@ -47,17 +46,19 @@ def build_severity_model(
             pretrained=pretrained,
             xrv_weights=xrv_weights,
         )
-    if model_name == "efficientnet_b0":
-        return timm.create_model(model_name, pretrained=pretrained, num_classes=num_classes)
-    raise ValueError(f"Unsupported severity model_name: {model_name}")
+    raise ValueError(
+        f"Unsupported severity model_name: {model_name}. "
+        f"Supported: {DEFAULT_SEVERITY_MODEL_NAME}"
+    )
 
 
 def get_severity_classifier(model_name: str, model: nn.Module) -> nn.Module:
     if model_name == "xrv_densenet121":
         return model.classifier
-    if model_name == "efficientnet_b0":
-        return model.classifier
-    raise ValueError(f"Unsupported severity model_name: {model_name}")
+    raise ValueError(
+        f"Unsupported severity model_name: {model_name}. "
+        f"Supported: {DEFAULT_SEVERITY_MODEL_NAME}"
+    )
 
 
 def configure_head_only_finetuning(model_name: str, model: nn.Module) -> nn.Module:

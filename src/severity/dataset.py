@@ -9,13 +9,10 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 import torchxrayvision as xrv
-from torchvision import transforms
 
 
 SEVERITY_CLASS_NAMES = ["caries", "deep_caries"]
 DEFAULT_SEVERITY_MODEL_NAME = "xrv_densenet121"
-IMAGENET_MEAN = (0.485, 0.456, 0.406)
-IMAGENET_STD = (0.229, 0.224, 0.225)
 
 
 def _resample_bilinear():
@@ -58,23 +55,9 @@ def build_transforms(
 ):
     if model_name == "xrv_densenet121":
         return _XRayVisionTransform(img_size=img_size, train=train)
-    if train:
-        return transforms.Compose(
-            [
-                transforms.Resize((img_size, img_size)),
-                transforms.RandomHorizontalFlip(p=0.5),
-                transforms.RandomRotation(degrees=8),
-                transforms.ColorJitter(brightness=0.12, contrast=0.12),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
-            ]
-        )
-    return transforms.Compose(
-        [
-            transforms.Resize((img_size, img_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
-        ]
+    raise ValueError(
+        f"Unsupported severity model_name: {model_name}. "
+        f"Supported: {DEFAULT_SEVERITY_MODEL_NAME}"
     )
 
 
@@ -87,7 +70,7 @@ class SeverityCropDataset(Dataset):
         model_name: str = DEFAULT_SEVERITY_MODEL_NAME,
         class_names: list[str] | None = None,
     ):
-        self.csv_path = Path(csv_path)
+        self.csv_path = Path(csv_path).resolve()
         self.df = pd.read_csv(self.csv_path)
         if "label" not in self.df.columns:
             raise ValueError(f"{self.csv_path} must contain a 'label' column.")
@@ -103,6 +86,8 @@ class SeverityCropDataset(Dataset):
     def __getitem__(self, idx: int):
         row = self.df.iloc[idx]
         img_path = Path(row["image_path"])
+        if not img_path.is_absolute():
+            img_path = self.csv_path.parent / img_path
         label_name = str(row["label"])
         if label_name not in self.class_to_id:
             raise KeyError(f"Unknown severity label '{label_name}' in {self.csv_path}")
