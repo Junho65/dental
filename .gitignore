@@ -1,6 +1,6 @@
 # Datasets
-data/
-data/raw/dentex/.cache/
+/data/
+/data/raw/dentex/.cache/
 
 # Python cache files
 __pycache__/
@@ -8,5 +8,32 @@ __pycache__/
 
 # Notebook/runtime-local files
 .ipynb_checkpoints/
-db.sqlite3
+.env
+*.env
 .torchxrayvision/
+
+# Local tool/editor state
+.claude/
+.yolo_config/
+.ultralytics/
+
+# Local project documentation
+/ARCHITECTURE.md
+/DATASET_README.md
+
+# Generated training/evaluation outputs
+runs/
+reports/process_logs/
+reports/tmp_*.json
+artifacts/report_eval/
+artifacts/tmp/
+artifacts/**/last.pt
+artifacts/**/*before*.pt
+
+# Large downloaded model/data archives
+*.pth
+*.h5
+*.zip
+
+# Unused external segmentation checkpoint (not referenced by app)
+/weights/
